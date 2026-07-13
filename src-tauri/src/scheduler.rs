@@ -28,6 +28,22 @@ pub fn pause_duration() -> Duration {
     }
 }
 
+/// No keyboard/mouse input for this long counts as AFK — the user is
+/// already away from the screen, so due reminders restart their interval.
+fn idle_threshold() -> Duration {
+    if cfg!(debug_assertions) {
+        Duration::from_secs(60)
+    } else {
+        Duration::from_secs(5 * 60)
+    }
+}
+
+fn idle_duration() -> Duration {
+    user_idle::UserIdle::get_time()
+        .map(|idle| idle.duration())
+        .unwrap_or(Duration::ZERO)
+}
+
 pub struct Reminder {
     pub name: &'static str,
     pub enabled: bool,
@@ -93,6 +109,17 @@ pub fn spawn(app: tauri::AppHandle, state: &SchedulerState) {
                     }
                     *paused = None;
                     println!("pause ended");
+                }
+            }
+
+            {
+                let mut rs = reminders.lock().unwrap();
+                if rs.iter().any(|r| r.is_due(now)) && idle_duration() >= idle_threshold() {
+                    for r in rs.iter_mut().filter(|r| r.is_due(now)) {
+                        r.next_due = now + r.interval;
+                    }
+                    println!("user idle — due reminders rescheduled");
+                    continue;
                 }
             }
 
