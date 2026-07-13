@@ -1,5 +1,8 @@
+mod commands;
 mod popup;
 mod scheduler;
+
+use std::sync::Mutex;
 
 use tauri::{
     menu::{Menu, MenuItem},
@@ -34,10 +37,28 @@ fn setup_tray(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .manage(commands::PopupComplete(Mutex::new(false)))
+        .invoke_handler(tauri::generate_handler![commands::complete_reminder])
         .setup(|app| {
             setup_tray(app)?;
             scheduler::spawn(app.app_handle().clone());
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            if window.label() != popup::POPUP_LABEL {
+                return;
+            }
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                let state = window.state::<commands::PopupComplete>();
+                let mut done = state.0.lock().unwrap();
+                if *done {
+                    // Reset the flag so the next popup starts locked.
+                    *done = false;
+                } else {
+                    // Alt+F4 / anything that isn't complete_reminder.
+                    api.prevent_close();
+                }
+            }
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
