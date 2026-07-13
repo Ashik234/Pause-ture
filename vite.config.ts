@@ -6,6 +6,16 @@ const host = process.env.TAURI_DEV_HOST;
 // https://vite.dev/config/
 export default defineConfig(async () => ({
 
+  // Multi-page app: hidden main window + fullscreen reminder popup
+  build: {
+    rollupOptions: {
+      input: {
+        main: "index.html",
+        reminder: "reminder.html",
+      },
+    },
+  },
+
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
   // 1. prevent Vite from obscuring rust errors

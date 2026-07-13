@@ -1,3 +1,4 @@
+mod popup;
 mod scheduler;
 
 use tauri::{
