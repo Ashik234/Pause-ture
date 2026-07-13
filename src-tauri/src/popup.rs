@@ -21,6 +21,7 @@ pub fn show(app: &AppHandle, kinds: &str) -> tauri::Result<bool> {
     .decorations(false)
     .skip_taskbar(true)
     .focused(true)
+    .transparent(true)
     .build()?;
 
     Ok(true)

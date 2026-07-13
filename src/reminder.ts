@@ -45,7 +45,7 @@ for (const k of kinds) {
   item.className = "item";
 
   const emoji = document.createElement("div");
-  emoji.className = "emoji";
+  emoji.className = "tile";
   emoji.textContent = copy.emoji;
 
   const title = document.createElement("h1");
