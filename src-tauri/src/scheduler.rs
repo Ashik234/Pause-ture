@@ -22,22 +22,24 @@ pub fn snooze_duration() -> Duration {
 
 pub struct Reminder {
     pub name: &'static str,
+    pub enabled: bool,
     pub interval: Duration,
     pub next_due: Instant,
 }
 
 impl Reminder {
-    fn new(name: &'static str, interval_min: u64) -> Self {
-        let interval = Duration::from_secs(interval_min * 60);
+    fn new(name: &'static str, setting: crate::settings::ReminderSetting) -> Self {
+        let interval = Duration::from_secs(setting.interval_min * 60);
         Self {
             name,
+            enabled: setting.enabled,
             interval,
             next_due: Instant::now() + interval,
         }
     }
 
     fn is_due(&self, now: Instant) -> bool {
-        now >= self.next_due
+        self.enabled && now >= self.next_due
     }
 }
 
@@ -45,18 +47,12 @@ impl Reminder {
 /// (complete resets next_due, snooze pushes it forward).
 pub struct SchedulerState(pub Arc<Mutex<Vec<Reminder>>>);
 
-pub fn default_reminders() -> Vec<Reminder> {
-    // Short intervals in dev builds so firing is observable within minutes.
-    let (eyes, posture, water, walk) = if cfg!(debug_assertions) {
-        (1, 2, 3, 4)
-    } else {
-        (20, 30, 45, 60)
-    };
+pub fn reminders_from(settings: &crate::settings::Settings) -> Vec<Reminder> {
     vec![
-        Reminder::new("eyes", eyes),
-        Reminder::new("posture", posture),
-        Reminder::new("water", water),
-        Reminder::new("walk", walk),
+        Reminder::new("eyes", settings.eyes),
+        Reminder::new("posture", settings.posture),
+        Reminder::new("water", settings.water),
+        Reminder::new("walk", settings.walk),
     ]
 }
 
@@ -74,7 +70,7 @@ pub fn spawn(app: tauri::AppHandle, reminders: Arc<Mutex<Vec<Reminder>>>) {
                 let rs = reminders.lock().unwrap();
                 if rs.iter().any(|r| r.is_due(now)) {
                     rs.iter()
-                        .filter(|r| r.next_due <= now + merge_window())
+                        .filter(|r| r.enabled && r.next_due <= now + merge_window())
                         .map(|r| r.name)
                         .collect()
                 } else {

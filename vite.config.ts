@@ -12,6 +12,7 @@ export default defineConfig(async () => ({
       input: {
         main: "index.html",
         reminder: "reminder.html",
+        settings: "settings.html",
       },
     },
   },

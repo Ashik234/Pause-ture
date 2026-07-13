@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pause-ture Settings</title>
+    <script type="module" src="/src/settings.ts" defer></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background: #12181f;
+        color: #f5f5f5;
+        font-family: "Segoe UI", system-ui, sans-serif;
+        padding: 1.5rem;
+        user-select: none;
+      }
+
+      h1 {
+        font-size: 1.3rem;
+        font-weight: 600;
+      }
+
+      .hint {
+        margin-top: 0.25rem;
+        font-size: 0.85rem;
+        color: #8fa0b3;
+      }
+
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-top: 1.25rem;
+        padding: 0.9rem 1rem;
+        background: #1b232d;
+        border-radius: 0.6rem;
+      }
+
+      .row .emoji {
+        font-size: 1.6rem;
+      }
+
+      .row label.name {
+        flex: 1;
+        font-size: 1rem;
+      }
+
+      .row input[type="number"] {
+        width: 4.5rem;
+        padding: 0.4rem 0.5rem;
+        font-size: 1rem;
+        font-family: inherit;
+        color: #f5f5f5;
+        background: #12181f;
+        border: 1px solid #2e3a48;
+        border-radius: 0.4rem;
+        text-align: right;
+      }
+
+      .row .unit {
+        font-size: 0.85rem;
+        color: #8fa0b3;
+      }
+
+      .row input[type="checkbox"] {
+        width: 1.15rem;
+        height: 1.15rem;
+        accent-color: #4c9aff;
+      }
+
+      #save {
+        margin-top: 1.75rem;
+        width: 100%;
+        padding: 0.75rem;
+        font-size: 1.05rem;
+        font-family: inherit;
+        color: #090a0f;
+        background: #f5f5f5;
+        border: none;
+        border-radius: 0.6rem;
+        cursor: pointer;
+      }
+
+      #save:hover {
+        background: #ffffff;
+      }
+
+      #status {
+        margin-top: 0.75rem;
+        text-align: center;
+        font-size: 0.9rem;
+        color: #6ecb7a;
+        min-height: 1.2rem;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>Settings</h1>
+    <p class="hint">Interval in minutes per reminder. Untick to disable.</p>
+
+    <div id="rows"></div>
+
+    <button id="save">Save</button>
+    <p id="status"></p>
+  </body>
+</html>

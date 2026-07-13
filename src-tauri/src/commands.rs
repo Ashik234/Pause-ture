@@ -1,8 +1,9 @@
 use std::sync::Mutex;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 use tauri::{AppHandle, Manager, State};
 
 use crate::scheduler::{snooze_duration, SchedulerState};
+use crate::settings::Settings;
 
 /// Set by `complete_reminder`/`snooze_reminder` just before the popup is
 /// closed; the CloseRequested handler only lets the window die when true.
@@ -54,4 +55,29 @@ pub fn snooze_reminder(
     }
     println!("snoozed: {}", kinds.join(", "));
     close_popup(&app, &flag);
+}
+
+#[tauri::command]
+pub fn get_settings(app: AppHandle) -> Settings {
+    Settings::load(&app)
+}
+
+#[tauri::command]
+pub fn save_settings(
+    app: AppHandle,
+    sched: State<SchedulerState>,
+    settings: Settings,
+) -> Result<(), String> {
+    settings.save(&app).map_err(|e| e.to_string())?;
+
+    // Apply live: new intervals count from now.
+    let now = Instant::now();
+    for r in sched.0.lock().unwrap().iter_mut() {
+        if let Some(s) = settings.get(r.name) {
+            r.enabled = s.enabled;
+            r.interval = Duration::from_secs(s.interval_min * 60);
+            r.next_due = now + r.interval;
+        }
+    }
+    Ok(())
 }

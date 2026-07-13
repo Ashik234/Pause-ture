@@ -1,14 +1,36 @@
 mod commands;
 mod popup;
 mod scheduler;
+mod settings;
 
 use std::sync::{Arc, Mutex};
 
 use tauri::{
     menu::{Menu, MenuItem},
     tray::TrayIconBuilder,
-    Manager,
+    AppHandle, Manager, WebviewUrl, WebviewWindowBuilder,
 };
+
+const SETTINGS_LABEL: &str = "settings";
+
+fn open_settings(app: &AppHandle) {
+    if let Some(win) = app.get_webview_window(SETTINGS_LABEL) {
+        let _ = win.set_focus();
+        return;
+    }
+    let result = WebviewWindowBuilder::new(
+        app,
+        SETTINGS_LABEL,
+        WebviewUrl::App("settings.html".into()),
+    )
+    .title("Pause-ture Settings")
+    .inner_size(420.0, 600.0)
+    .resizable(false)
+    .build();
+    if let Err(e) = result {
+        eprintln!("failed to open settings window: {e}");
+    }
+}
 
 fn setup_tray(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     let pause = MenuItem::with_id(app, "pause", "Pause 1 hour", true, None::<&str>)?;
@@ -23,9 +45,9 @@ fn setup_tray(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .show_menu_on_left_click(true)
         .on_menu_event(|app, event| match event.id.as_ref() {
             "quit" => app.exit(0),
-            // Wired up in later commits.
+            // Wired up in a later commit.
             "pause" => println!("tray: pause 1 hour"),
-            "settings" => println!("tray: settings"),
+            "settings" => open_settings(app),
             _ => {}
         })
         .build(app)?;
@@ -37,16 +59,20 @@ fn setup_tray(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_store::Builder::new().build())
         .manage(commands::PopupComplete(Mutex::new(false)))
-        .manage(scheduler::SchedulerState(Arc::new(Mutex::new(
-            scheduler::default_reminders(),
-        ))))
         .invoke_handler(tauri::generate_handler![
             commands::complete_reminder,
-            commands::snooze_reminder
+            commands::snooze_reminder,
+            commands::get_settings,
+            commands::save_settings
         ])
         .setup(|app| {
             setup_tray(app)?;
+            let stored = settings::Settings::load(app.app_handle());
+            app.manage(scheduler::SchedulerState(Arc::new(Mutex::new(
+                scheduler::reminders_from(&stored),
+            ))));
             let reminders = app.state::<scheduler::SchedulerState>().0.clone();
             scheduler::spawn(app.app_handle().clone(), reminders);
             Ok(())
