@@ -109,6 +109,11 @@ pub fn spawn(app: tauri::AppHandle, state: &SchedulerState) {
                     }
                     *paused = None;
                     println!("pause ended");
+                    // Tray menu/tooltip must be touched from the main thread.
+                    let app_main = app.clone();
+                    let _ = app.run_on_main_thread(move || {
+                        crate::set_pause_ui(&app_main, None);
+                    });
                 }
             }
 

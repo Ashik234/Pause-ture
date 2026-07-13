@@ -13,6 +13,29 @@ use tauri::{
 
 const SETTINGS_LABEL: &str = "settings";
 
+/// Tray pieces that change while running: tooltip and the Resume item.
+struct TrayHandles {
+    tray: tauri::tray::TrayIcon<tauri::Wry>,
+    resume: MenuItem<tauri::Wry>,
+}
+
+/// Reflects pause state in the tray. `until = None` means running.
+pub(crate) fn set_pause_ui(app: &AppHandle, until: Option<chrono::DateTime<chrono::Local>>) {
+    let handles = app.state::<TrayHandles>();
+    match until {
+        Some(t) => {
+            let _ = handles
+                .tray
+                .set_tooltip(Some(format!("Pause-ture — paused until {}", t.format("%H:%M"))));
+            let _ = handles.resume.set_enabled(true);
+        }
+        None => {
+            let _ = handles.tray.set_tooltip(Some("Pause-ture"));
+            let _ = handles.resume.set_enabled(false);
+        }
+    }
+}
+
 fn open_settings(app: &AppHandle) {
     if let Some(win) = app.get_webview_window(SETTINGS_LABEL) {
         let _ = win.set_focus();
@@ -33,12 +56,18 @@ fn open_settings(app: &AppHandle) {
 }
 
 fn setup_tray(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
-    let pause = MenuItem::with_id(app, "pause", "Pause 1 hour", true, None::<&str>)?;
+    let pause_label = if cfg!(debug_assertions) {
+        "Pause 2 min (dev)"
+    } else {
+        "Pause 1 hour"
+    };
+    let pause = MenuItem::with_id(app, "pause", pause_label, true, None::<&str>)?;
+    let resume = MenuItem::with_id(app, "resume", "Resume", false, None::<&str>)?;
     let settings = MenuItem::with_id(app, "settings", "Settings", true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
-    let menu = Menu::with_items(app, &[&pause, &settings, &quit])?;
+    let menu = Menu::with_items(app, &[&pause, &resume, &settings, &quit])?;
 
-    TrayIconBuilder::new()
+    let tray = TrayIconBuilder::new()
         .icon(app.default_window_icon().unwrap().clone())
         .tooltip("Pause-ture")
         .menu(&menu)
@@ -49,12 +78,23 @@ fn setup_tray(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
                 let state = app.state::<scheduler::SchedulerState>();
                 *state.paused_until.lock().unwrap() =
                     Some(std::time::Instant::now() + scheduler::pause_duration());
-                println!("paused for {:?}", scheduler::pause_duration());
+                let until = chrono::Local::now()
+                    + chrono::Duration::from_std(scheduler::pause_duration()).unwrap();
+                set_pause_ui(app, Some(until));
+                println!("paused until {}", until.format("%H:%M"));
+            }
+            "resume" => {
+                let state = app.state::<scheduler::SchedulerState>();
+                *state.paused_until.lock().unwrap() = None;
+                set_pause_ui(app, None);
+                println!("resumed");
             }
             "settings" => open_settings(app),
             _ => {}
         })
         .build(app)?;
+
+    app.manage(TrayHandles { tray, resume });
 
     Ok(())
 }
