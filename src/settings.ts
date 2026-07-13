@@ -1,26 +1,23 @@
 import { invoke } from "@tauri-apps/api/core";
 
 type ReminderSetting = { enabled: boolean; interval_min: number };
-type Settings = {
-  eyes: ReminderSetting;
-  posture: ReminderSetting;
-  water: ReminderSetting;
-  walk: ReminderSetting;
-};
+type Kind = "eyes" | "posture" | "water" | "walk";
+type Settings = Record<Kind, ReminderSetting> & { autostart: boolean };
 
-const LABELS: Record<keyof Settings, { emoji: string; name: string }> = {
+const LABELS: Record<Kind, { emoji: string; name: string }> = {
   eyes: { emoji: "👀", name: "Look away (20-20-20)" },
   posture: { emoji: "🪑", name: "Posture check" },
   water: { emoji: "💧", name: "Drink water" },
   walk: { emoji: "🚶", name: "Take a walk" },
 };
 
-const KINDS = Object.keys(LABELS) as (keyof Settings)[];
+const KINDS = Object.keys(LABELS) as Kind[];
 
 const rowsEl = document.querySelector("#rows")!;
 const statusEl = document.querySelector("#status")!;
+const autostartEl = document.querySelector<HTMLInputElement>("#autostart")!;
 const inputs = {} as Record<
-  keyof Settings,
+  Kind,
   { enabled: HTMLInputElement; interval: HTMLInputElement }
 >;
 
@@ -55,6 +52,7 @@ for (const kind of KINDS) {
 
 async function loadCurrent() {
   const current = await invoke<Settings>("get_settings");
+  autostartEl.checked = current.autostart;
   for (const kind of KINDS) {
     inputs[kind].enabled.checked = current[kind].enabled;
     inputs[kind].interval.value = String(current[kind].interval_min);
@@ -63,7 +61,7 @@ async function loadCurrent() {
 loadCurrent();
 
 document.querySelector("#save")!.addEventListener("click", async () => {
-  const settings = {} as Settings;
+  const settings = { autostart: autostartEl.checked } as Settings;
   for (const kind of KINDS) {
     const interval_min = Math.max(
       1,

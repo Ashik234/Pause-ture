@@ -11,8 +11,14 @@ pub struct ReminderSetting {
     pub interval_min: u64,
 }
 
+fn default_true() -> bool {
+    true
+}
+
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Settings {
+    #[serde(default = "default_true")]
+    pub autostart: bool,
     pub eyes: ReminderSetting,
     pub posture: ReminderSetting,
     pub water: ReminderSetting,
@@ -32,6 +38,7 @@ impl Default for Settings {
             interval_min,
         };
         Self {
+            autostart: true,
             eyes: on(eyes),
             posture: on(posture),
             water: on(water),
@@ -65,5 +72,24 @@ impl Settings {
         let store = app.store(STORE_FILE)?;
         store.set(STORE_KEY, serde_json::to_value(self)?);
         store.save()
+    }
+}
+
+/// Registers/unregisters the app in the OS launch list. Skipped in dev
+/// builds so a target/debug exe never lands in the registry run key.
+pub fn apply_autostart(app: &AppHandle, enabled: bool) {
+    if cfg!(debug_assertions) {
+        println!("autostart -> {enabled} (skipped in dev build)");
+        return;
+    }
+    use tauri_plugin_autostart::ManagerExt;
+    let launcher = app.autolaunch();
+    let result = if enabled {
+        launcher.enable()
+    } else {
+        launcher.disable()
+    };
+    if let Err(e) = result {
+        eprintln!("failed to update autostart: {e}");
     }
 }

@@ -25,7 +25,7 @@ pub fn complete_reminder(
 ) {
     let now = Instant::now();
     for r in sched
-        .0
+        .reminders
         .lock()
         .unwrap()
         .iter_mut()
@@ -45,7 +45,7 @@ pub fn snooze_reminder(
 ) {
     let now = Instant::now();
     for r in sched
-        .0
+        .reminders
         .lock()
         .unwrap()
         .iter_mut()
@@ -69,10 +69,11 @@ pub fn save_settings(
     settings: Settings,
 ) -> Result<(), String> {
     settings.save(&app).map_err(|e| e.to_string())?;
+    crate::settings::apply_autostart(&app, settings.autostart);
 
     // Apply live: new intervals count from now.
     let now = Instant::now();
-    for r in sched.0.lock().unwrap().iter_mut() {
+    for r in sched.reminders.lock().unwrap().iter_mut() {
         if let Some(s) = settings.get(r.name) {
             r.enabled = s.enabled;
             r.interval = Duration::from_secs(s.interval_min * 60);

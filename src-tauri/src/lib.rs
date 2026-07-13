@@ -3,7 +3,7 @@ mod popup;
 mod scheduler;
 mod settings;
 
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
 use tauri::{
     menu::{Menu, MenuItem},
@@ -45,8 +45,12 @@ fn setup_tray(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .show_menu_on_left_click(true)
         .on_menu_event(|app, event| match event.id.as_ref() {
             "quit" => app.exit(0),
-            // Wired up in a later commit.
-            "pause" => println!("tray: pause 1 hour"),
+            "pause" => {
+                let state = app.state::<scheduler::SchedulerState>();
+                *state.paused_until.lock().unwrap() =
+                    Some(std::time::Instant::now() + scheduler::pause_duration());
+                println!("paused for {:?}", scheduler::pause_duration());
+            }
             "settings" => open_settings(app),
             _ => {}
         })
@@ -60,6 +64,10 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_store::Builder::new().build())
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            None,
+        ))
         .manage(commands::PopupComplete(Mutex::new(false)))
         .invoke_handler(tauri::generate_handler![
             commands::complete_reminder,
@@ -70,11 +78,14 @@ pub fn run() {
         .setup(|app| {
             setup_tray(app)?;
             let stored = settings::Settings::load(app.app_handle());
-            app.manage(scheduler::SchedulerState(Arc::new(Mutex::new(
-                scheduler::reminders_from(&stored),
-            ))));
-            let reminders = app.state::<scheduler::SchedulerState>().0.clone();
-            scheduler::spawn(app.app_handle().clone(), reminders);
+            settings::apply_autostart(app.app_handle(), stored.autostart);
+            app.manage(scheduler::SchedulerState::new(scheduler::reminders_from(
+                &stored,
+            )));
+            scheduler::spawn(
+                app.app_handle().clone(),
+                &app.state::<scheduler::SchedulerState>(),
+            );
             Ok(())
         })
         .on_window_event(|window, event| {
