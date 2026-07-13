@@ -1,6 +1,9 @@
+mod scheduler;
+
 use tauri::{
     menu::{Menu, MenuItem},
     tray::TrayIconBuilder,
+    Manager,
 };
 
 fn setup_tray(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
@@ -32,6 +35,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
             setup_tray(app)?;
+            scheduler::spawn(app.app_handle().clone());
             Ok(())
         })
         .run(tauri::generate_context!())
