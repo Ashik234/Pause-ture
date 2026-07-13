@@ -24,7 +24,7 @@ fn open_settings(app: &AppHandle) {
         WebviewUrl::App("settings.html".into()),
     )
     .title("Pause-ture Settings")
-    .inner_size(420.0, 600.0)
+    .inner_size(420.0, 660.0)
     .resizable(false)
     .build();
     if let Err(e) = result {
