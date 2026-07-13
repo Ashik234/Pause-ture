@@ -1,4 +1,5 @@
 mod commands;
+mod guard;
 mod popup;
 mod scheduler;
 mod settings;

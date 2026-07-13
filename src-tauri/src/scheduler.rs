@@ -117,6 +117,14 @@ pub fn spawn(app: tauri::AppHandle, state: &SchedulerState) {
                 }
             }
 
+            // Presenting or on a call: keep reminders due, fire after it ends.
+            {
+                let rs = reminders.lock().unwrap();
+                if rs.iter().any(|r| r.is_due(now)) && crate::guard::should_hold() {
+                    continue;
+                }
+            }
+
             {
                 let mut rs = reminders.lock().unwrap();
                 if rs.iter().any(|r| r.is_due(now)) && idle_duration() >= idle_threshold() {

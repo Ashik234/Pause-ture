@@ -2440,6 +2440,8 @@ dependencies = [
  "tauri-plugin-store",
  "tokio",
  "user-idle",
+ "windows",
+ "winreg 0.55.0",
 ]
 
 [[package]]
