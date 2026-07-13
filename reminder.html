@@ -30,11 +30,15 @@
 
       .card {
         text-align: center;
-        max-width: 40rem;
+        max-width: 44rem;
         padding: 2rem;
       }
 
-      #emoji {
+      .item + .item {
+        margin-top: 2.5rem;
+      }
+
+      .emoji {
         font-size: 6rem;
         line-height: 1;
       }
@@ -46,10 +50,29 @@
         letter-spacing: -0.02em;
       }
 
-      #message {
+      .message {
         margin-top: 1rem;
         font-size: 1.4rem;
         color: #b8c4d0;
+      }
+
+      /* Merged popups: shrink items so several fit comfortably. */
+      body.multi .emoji {
+        font-size: 3.5rem;
+      }
+
+      body.multi h1 {
+        margin-top: 0.75rem;
+        font-size: 2rem;
+      }
+
+      body.multi .message {
+        margin-top: 0.5rem;
+        font-size: 1.15rem;
+      }
+
+      body.multi .item + .item {
+        margin-top: 2rem;
       }
 
       #done {
@@ -73,15 +96,31 @@
         color: #8fa0b3;
         cursor: not-allowed;
       }
+
+      #snooze {
+        display: block;
+        margin: 1.5rem auto 0;
+        padding: 0.4rem 1rem;
+        font-size: 0.95rem;
+        font-family: inherit;
+        color: #8fa0b3;
+        background: none;
+        border: none;
+        cursor: pointer;
+      }
+
+      #snooze:hover {
+        color: #b8c4d0;
+        text-decoration: underline;
+      }
     </style>
   </head>
 
   <body>
     <main class="card">
-      <div id="emoji"></div>
-      <h1 id="title"></h1>
-      <p id="message"></p>
+      <div id="items"></div>
       <button id="done">Done ✓</button>
+      <button id="snooze">Snooze 5 min</button>
     </main>
   </body>
 </html>

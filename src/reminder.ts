@@ -25,13 +25,6 @@ const COPY: Record<string, Copy> = {
   },
 };
 
-const kind = new URLSearchParams(window.location.search).get("type") ?? "eyes";
-const copy = COPY[kind] ?? COPY.eyes;
-
-document.querySelector("#emoji")!.textContent = copy.emoji;
-document.querySelector("#title")!.textContent = copy.title;
-document.querySelector("#message")!.textContent = copy.message;
-
 // Seconds the dismiss button stays locked; 0 = instantly dismissable.
 const GATE_SECONDS: Record<string, number> = {
   eyes: 20,
@@ -40,30 +33,65 @@ const GATE_SECONDS: Record<string, number> = {
   walk: 0,
 };
 
-const btn = document.querySelector<HTMLButtonElement>("#done")!;
-let remaining = GATE_SECONDS[kind] ?? 0;
+const kinds = (new URLSearchParams(window.location.search).get("types") ?? "eyes")
+  .split(",")
+  .filter((k) => k in COPY);
+if (kinds.length === 0) kinds.push("eyes");
+
+const itemsEl = document.querySelector("#items")!;
+for (const k of kinds) {
+  const copy = COPY[k];
+  const item = document.createElement("div");
+  item.className = "item";
+
+  const emoji = document.createElement("div");
+  emoji.className = "emoji";
+  emoji.textContent = copy.emoji;
+
+  const title = document.createElement("h1");
+  title.textContent = copy.title;
+
+  const message = document.createElement("p");
+  message.className = "message";
+  message.textContent = copy.message;
+
+  item.append(emoji, title, message);
+  itemsEl.appendChild(item);
+}
+if (kinds.length > 1) document.body.classList.add("multi");
+
+const doneBtn = document.querySelector<HTMLButtonElement>("#done")!;
+const snoozeBtn = document.querySelector<HTMLButtonElement>("#snooze")!;
+
+// Merged popups gate on the strictest reminder in the batch.
+let remaining = Math.max(...kinds.map((k) => GATE_SECONDS[k] ?? 0));
 
 function arm() {
-  btn.disabled = false;
-  btn.textContent = "Done ✓";
+  doneBtn.disabled = false;
+  doneBtn.textContent = "Done ✓";
 }
 
 if (remaining > 0) {
-  btn.disabled = true;
-  btn.textContent = `${remaining}s`;
+  doneBtn.disabled = true;
+  doneBtn.textContent = `${remaining}s`;
   const timer = setInterval(() => {
     remaining -= 1;
     if (remaining <= 0) {
       clearInterval(timer);
       arm();
     } else {
-      btn.textContent = `${remaining}s`;
+      doneBtn.textContent = `${remaining}s`;
     }
   }, 1000);
 } else {
   arm();
 }
 
-btn.addEventListener("click", () => {
-  if (!btn.disabled) invoke("complete_reminder");
+doneBtn.addEventListener("click", () => {
+  if (!doneBtn.disabled) invoke("complete_reminder", { kinds });
+});
+
+// Escape hatch for calls/meetings — usable even during the countdown.
+snoozeBtn.addEventListener("click", () => {
+  invoke("snooze_reminder", { kinds });
 });

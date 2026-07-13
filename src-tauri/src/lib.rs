@@ -2,7 +2,7 @@ mod commands;
 mod popup;
 mod scheduler;
 
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use tauri::{
     menu::{Menu, MenuItem},
@@ -38,10 +38,17 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(commands::PopupComplete(Mutex::new(false)))
-        .invoke_handler(tauri::generate_handler![commands::complete_reminder])
+        .manage(scheduler::SchedulerState(Arc::new(Mutex::new(
+            scheduler::default_reminders(),
+        ))))
+        .invoke_handler(tauri::generate_handler![
+            commands::complete_reminder,
+            commands::snooze_reminder
+        ])
         .setup(|app| {
             setup_tray(app)?;
-            scheduler::spawn(app.app_handle().clone());
+            let reminders = app.state::<scheduler::SchedulerState>().0.clone();
+            scheduler::spawn(app.app_handle().clone(), reminders);
             Ok(())
         })
         .on_window_event(|window, event| {
