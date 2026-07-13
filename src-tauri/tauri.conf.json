@@ -26,6 +26,10 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "publisher": "Ashik",
+    "copyright": "© 2026 Ashik",
+    "shortDescription": "Break reminders that actually stop you",
+    "longDescription": "Fullscreen break reminders for Windows: rest your eyes, fix your posture, drink water, take a walk. Lives in the system tray.",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
