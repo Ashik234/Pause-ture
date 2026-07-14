@@ -23,9 +23,18 @@
       "csp": null
     }
   },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEQ5RUI4OUQ3RTA3QUY4M0UKUldRKytIcmcxNG5yMlZrOGhGWm9mQnF6dit4MG02K0hhb0ZJRkJBVzFZeC9rV0pFS0FiREMwR0EK",
+      "endpoints": [
+        "https://github.com/Ashik234/Pause-ture/releases/latest/download/latest.json"
+      ]
+    }
+  },
   "bundle": {
     "active": true,
     "targets": "all",
+    "createUpdaterArtifacts": true,
     "publisher": "Ashik",
     "copyright": "© 2026 Ashik",
     "shortDescription": "Break reminders that actually stop you",

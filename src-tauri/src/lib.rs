@@ -111,6 +111,34 @@ fn setup_tray(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+/// Checks GitHub for a newer release shortly after startup and installs it
+/// quietly. Dev builds skip this — local binaries are unsigned.
+#[cfg(not(debug_assertions))]
+fn spawn_update_check(app: AppHandle) {
+    use tauri_plugin_updater::UpdaterExt;
+    tauri::async_runtime::spawn(async move {
+        tokio::time::sleep(std::time::Duration::from_secs(15)).await;
+        let updater = match app.updater() {
+            Ok(u) => u,
+            Err(e) => {
+                eprintln!("updater unavailable: {e}");
+                return;
+            }
+        };
+        match updater.check().await {
+            Ok(Some(update)) => {
+                println!("update {} available — downloading", update.version);
+                match update.download_and_install(|_, _| {}, || {}).await {
+                    Ok(()) => println!("update installed"),
+                    Err(e) => eprintln!("update install failed: {e}"),
+                }
+            }
+            Ok(None) => {}
+            Err(e) => eprintln!("update check failed: {e}"),
+        }
+    });
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -120,6 +148,7 @@ pub fn run() {
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
             None,
         ))
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(commands::PopupComplete(Mutex::new(false)))
         .invoke_handler(tauri::generate_handler![
             commands::complete_reminder,
@@ -139,6 +168,8 @@ pub fn run() {
                 app.app_handle().clone(),
                 &app.state::<scheduler::SchedulerState>(),
             );
+            #[cfg(not(debug_assertions))]
+            spawn_update_check(app.app_handle().clone());
             Ok(())
         })
         .on_window_event(|window, event| {
