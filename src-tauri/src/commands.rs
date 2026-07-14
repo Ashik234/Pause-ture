@@ -33,6 +33,7 @@ pub fn complete_reminder(
     {
         r.next_due = now + r.interval;
     }
+    crate::stats::bump(&app, "done", kinds.len() as u64);
     close_popup(&app, &flag);
 }
 
@@ -54,7 +55,13 @@ pub fn snooze_reminder(
         r.next_due = now + snooze_duration();
     }
     println!("snoozed: {}", kinds.join(", "));
+    crate::stats::bump(&app, "snoozed", kinds.len() as u64);
     close_popup(&app, &flag);
+}
+
+#[tauri::command]
+pub fn get_stats(app: AppHandle) -> crate::stats::DayStats {
+    crate::stats::today_stats(&app)
 }
 
 #[tauri::command]

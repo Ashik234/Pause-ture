@@ -3,6 +3,7 @@ mod guard;
 mod popup;
 mod scheduler;
 mod settings;
+mod stats;
 
 use std::sync::Mutex;
 
@@ -124,7 +125,8 @@ pub fn run() {
             commands::complete_reminder,
             commands::snooze_reminder,
             commands::get_settings,
-            commands::save_settings
+            commands::save_settings,
+            commands::get_stats
         ])
         .setup(|app| {
             setup_tray(app)?;

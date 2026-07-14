@@ -81,6 +81,28 @@
         margin-top: 0.1rem;
       }
 
+      #stats {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0 1.4rem 0.75rem;
+        padding: 0.55rem 1rem;
+        font-size: 0.85rem;
+        font-variant-numeric: tabular-nums;
+        color: var(--muted);
+        background: var(--accent-dim);
+        border-radius: 999px;
+      }
+
+      #stats .dot {
+        opacity: 0.5;
+      }
+
+      #stats b {
+        color: var(--text);
+        font-weight: 600;
+      }
+
       main {
         flex: 1;
         padding: 0 1.4rem;
@@ -306,6 +328,12 @@
         <p>How often each break interrupts you</p>
       </div>
     </header>
+
+    <div id="stats" hidden>
+      <span id="stats-done"></span>
+      <span class="dot">·</span>
+      <span id="stats-snoozed"></span>
+    </div>
 
     <main id="rows"></main>
 

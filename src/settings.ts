@@ -120,6 +120,20 @@ const soundEl = makeToggleRow("🔔", "Popup sound", "Gentle chime when a break 
 const quipsEl = makeToggleRow("🎭", "Joke of the break", "A joke or fact on each popup");
 const autostartEl = makeToggleRow("🚀", "Start on boot", "Launch with Windows");
 
+async function loadStats() {
+  const { done, snoozed } = await invoke<{ done: number; snoozed: number }>(
+    "get_stats",
+  );
+  if (done === 0 && snoozed === 0) return; // nothing to brag or confess yet
+  const statsEl = document.querySelector<HTMLElement>("#stats")!;
+  document.querySelector("#stats-done")!.innerHTML =
+    `Today: <b>${done}</b> break${done === 1 ? "" : "s"} taken`;
+  document.querySelector("#stats-snoozed")!.innerHTML =
+    `<b>${snoozed}</b> snoozed`;
+  statsEl.hidden = false;
+}
+loadStats();
+
 async function loadCurrent() {
   const current = await invoke<Settings>("get_settings");
   autostartEl.checked = current.autostart;
