@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { randomQuip } from "./quips";
 
 type Copy = { emoji: string; title: string; message: string };
 
@@ -97,13 +98,10 @@ snoozeBtn.addEventListener("click", () => {
 });
 
 // Gentle two-note chime, synthesized so no audio asset ships.
-async function playChime() {
+function playChime() {
   try {
-    const settings = await invoke<{ sound: boolean }>("get_settings");
-    if (!settings.sound) return;
-
     const ctx = new AudioContext();
-    if (ctx.state === "suspended") await ctx.resume();
+    if (ctx.state === "suspended") ctx.resume();
 
     const note = (freq: number, at: number) => {
       const osc = ctx.createOscillator();
@@ -124,4 +122,17 @@ async function playChime() {
     // No audio device or blocked autoplay — popup works fine silent.
   }
 }
-playChime();
+
+function showQuip() {
+  const { kind, text } = randomQuip();
+  const el = document.querySelector("#quip")!;
+  el.textContent = `${kind === "joke" ? "🎭" : "💡"} ${text}`;
+  el.classList.add("show");
+}
+
+invoke<{ sound: boolean; quips: boolean }>("get_settings")
+  .then((prefs) => {
+    if (prefs.sound) playChime();
+    if (prefs.quips) showQuip();
+  })
+  .catch(() => {});

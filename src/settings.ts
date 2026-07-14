@@ -5,6 +5,7 @@ type Kind = "eyes" | "posture" | "water" | "walk";
 type Settings = Record<Kind, ReminderSetting> & {
   autostart: boolean;
   sound: boolean;
+  quips: boolean;
 };
 
 const LABELS: Record<Kind, { emoji: string; name: string; sub: string }> = {
@@ -116,12 +117,14 @@ function makeToggleRow(emoji: string, name: string, sub: string): HTMLInputEleme
 }
 
 const soundEl = makeToggleRow("🔔", "Popup sound", "Gentle chime when a break appears");
+const quipsEl = makeToggleRow("🎭", "Joke of the break", "A joke or fact on each popup");
 const autostartEl = makeToggleRow("🚀", "Start on boot", "Launch with Windows");
 
 async function loadCurrent() {
   const current = await invoke<Settings>("get_settings");
   autostartEl.checked = current.autostart;
   soundEl.checked = current.sound;
+  quipsEl.checked = current.quips;
   for (const kind of KINDS) {
     inputs[kind].enabled.checked = current[kind].enabled;
     inputs[kind].interval.value = String(current[kind].interval_min);
@@ -148,6 +151,7 @@ saveBtn.addEventListener("click", async () => {
   const settings = {
     autostart: autostartEl.checked,
     sound: soundEl.checked,
+    quips: quipsEl.checked,
   } as Settings;
   for (const kind of KINDS) {
     const interval_min = clamp(Number(inputs[kind].interval.value) || 1);

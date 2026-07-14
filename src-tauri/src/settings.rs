@@ -21,6 +21,8 @@ pub struct Settings {
     pub autostart: bool,
     #[serde(default = "default_true")]
     pub sound: bool,
+    #[serde(default = "default_true")]
+    pub quips: bool,
     pub eyes: ReminderSetting,
     pub posture: ReminderSetting,
     pub water: ReminderSetting,
@@ -42,6 +44,7 @@ impl Default for Settings {
         Self {
             autostart: true,
             sound: true,
+            quips: true,
             eyes: on(eyes),
             posture: on(posture),
             water: on(water),
