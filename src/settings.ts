@@ -2,7 +2,10 @@ import { invoke } from "@tauri-apps/api/core";
 
 type ReminderSetting = { enabled: boolean; interval_min: number };
 type Kind = "eyes" | "posture" | "water" | "walk";
-type Settings = Record<Kind, ReminderSetting> & { autostart: boolean };
+type Settings = Record<Kind, ReminderSetting> & {
+  autostart: boolean;
+  sound: boolean;
+};
 
 const LABELS: Record<Kind, { emoji: string; name: string; sub: string }> = {
   eyes: { emoji: "👀", name: "Look away", sub: "20-20-20 rule for your eyes" },
@@ -91,27 +94,34 @@ function makeRow(kind: Kind) {
 
 for (const kind of KINDS) makeRow(kind);
 
-// autostart row — switch only, no stepper
-const autoRow = document.createElement("div");
-autoRow.className = "row";
-const autoTile = document.createElement("div");
-autoTile.className = "tile";
-autoTile.textContent = "🚀";
-const autoInfo = document.createElement("div");
-const autoName = document.createElement("div");
-autoName.className = "name";
-autoName.textContent = "Start on boot";
-const autoSub = document.createElement("div");
-autoSub.className = "sub";
-autoSub.textContent = "Launch with Windows";
-autoInfo.append(autoName, autoSub);
-const { wrap: autoWrap, input: autostartEl } = makeSwitch();
-autoRow.append(autoTile, autoInfo, autoWrap);
-rowsEl.appendChild(autoRow);
+// switch-only rows (no stepper)
+function makeToggleRow(emoji: string, name: string, sub: string): HTMLInputElement {
+  const row = document.createElement("div");
+  row.className = "row";
+  const tile = document.createElement("div");
+  tile.className = "tile";
+  tile.textContent = emoji;
+  const info = document.createElement("div");
+  const nameEl = document.createElement("div");
+  nameEl.className = "name";
+  nameEl.textContent = name;
+  const subEl = document.createElement("div");
+  subEl.className = "sub";
+  subEl.textContent = sub;
+  info.append(nameEl, subEl);
+  const { wrap, input } = makeSwitch();
+  row.append(tile, info, wrap);
+  rowsEl.appendChild(row);
+  return input;
+}
+
+const soundEl = makeToggleRow("🔔", "Popup sound", "Gentle chime when a break appears");
+const autostartEl = makeToggleRow("🚀", "Start on boot", "Launch with Windows");
 
 async function loadCurrent() {
   const current = await invoke<Settings>("get_settings");
   autostartEl.checked = current.autostart;
+  soundEl.checked = current.sound;
   for (const kind of KINDS) {
     inputs[kind].enabled.checked = current[kind].enabled;
     inputs[kind].interval.value = String(current[kind].interval_min);
@@ -135,7 +145,10 @@ function flash(label: string, cls: "saved" | "error") {
 }
 
 saveBtn.addEventListener("click", async () => {
-  const settings = { autostart: autostartEl.checked } as Settings;
+  const settings = {
+    autostart: autostartEl.checked,
+    sound: soundEl.checked,
+  } as Settings;
   for (const kind of KINDS) {
     const interval_min = clamp(Number(inputs[kind].interval.value) || 1);
     inputs[kind].interval.value = String(interval_min);

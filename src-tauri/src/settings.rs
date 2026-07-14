@@ -19,6 +19,8 @@ fn default_true() -> bool {
 pub struct Settings {
     #[serde(default = "default_true")]
     pub autostart: bool,
+    #[serde(default = "default_true")]
+    pub sound: bool,
     pub eyes: ReminderSetting,
     pub posture: ReminderSetting,
     pub water: ReminderSetting,
@@ -39,6 +41,7 @@ impl Default for Settings {
         };
         Self {
             autostart: true,
+            sound: true,
             eyes: on(eyes),
             posture: on(posture),
             water: on(water),

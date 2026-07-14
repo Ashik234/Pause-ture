@@ -95,3 +95,33 @@ doneBtn.addEventListener("click", () => {
 snoozeBtn.addEventListener("click", () => {
   invoke("snooze_reminder", { kinds });
 });
+
+// Gentle two-note chime, synthesized so no audio asset ships.
+async function playChime() {
+  try {
+    const settings = await invoke<{ sound: boolean }>("get_settings");
+    if (!settings.sound) return;
+
+    const ctx = new AudioContext();
+    if (ctx.state === "suspended") await ctx.resume();
+
+    const note = (freq: number, at: number) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      const t = ctx.currentTime + at;
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.1, t + 0.06);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 1.1);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 1.2);
+    };
+    note(659.25, 0); // E5
+    note(987.77, 0.18); // B5
+  } catch {
+    // No audio device or blocked autoplay — popup works fine silent.
+  }
+}
+playChime();
