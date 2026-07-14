@@ -62,11 +62,12 @@ fn setup_tray(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     } else {
         "Pause 1 hour"
     };
+    let break_now = MenuItem::with_id(app, "break_now", "Taking a break now", true, None::<&str>)?;
     let pause = MenuItem::with_id(app, "pause", pause_label, true, None::<&str>)?;
     let resume = MenuItem::with_id(app, "resume", "Resume", false, None::<&str>)?;
     let settings = MenuItem::with_id(app, "settings", "Settings", true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
-    let menu = Menu::with_items(app, &[&pause, &resume, &settings, &quit])?;
+    let menu = Menu::with_items(app, &[&break_now, &pause, &resume, &settings, &quit])?;
 
     let tray = TrayIconBuilder::new()
         .icon(app.default_window_icon().unwrap().clone())
@@ -75,6 +76,15 @@ fn setup_tray(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .show_menu_on_left_click(true)
         .on_menu_event(|app, event| match event.id.as_ref() {
             "quit" => app.exit(0),
+            // User is stepping away voluntarily — every timer restarts from now.
+            "break_now" => {
+                let state = app.state::<scheduler::SchedulerState>();
+                let now = std::time::Instant::now();
+                for r in state.reminders.lock().unwrap().iter_mut() {
+                    r.next_due = now + r.interval;
+                }
+                println!("break taken — all timers reset");
+            }
             "pause" => {
                 let state = app.state::<scheduler::SchedulerState>();
                 *state.paused_until.lock().unwrap() =
