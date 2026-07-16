@@ -21,6 +21,7 @@ pub fn should_hold() -> bool {
 
 /// True when a fullscreen app, game, or presentation owns the screen —
 /// the same signal Windows uses to suppress its own notifications.
+#[cfg(windows)]
 fn fullscreen_or_presentation() -> bool {
     use windows::Win32::UI::Shell::{
         SHQueryUserNotificationState, QUNS_BUSY, QUNS_PRESENTATION_MODE,
@@ -38,6 +39,7 @@ fn fullscreen_or_presentation() -> bool {
 /// True when any app currently holds the microphone (Teams/Meet/Zoom call).
 /// Windows tracks this in the CapabilityAccessManager consent store:
 /// an in-use app has LastUsedTimeStop == 0.
+#[cfg(windows)]
 fn mic_in_use() -> bool {
     use winreg::enums::HKEY_CURRENT_USER;
     use winreg::RegKey;
@@ -61,5 +63,16 @@ fn mic_in_use() -> bool {
             }
         }
     }
+    false
+}
+
+// macOS/Linux: no guard signals implemented yet — never hold.
+#[cfg(not(windows))]
+fn fullscreen_or_presentation() -> bool {
+    false
+}
+
+#[cfg(not(windows))]
+fn mic_in_use() -> bool {
     false
 }
