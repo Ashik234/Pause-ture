@@ -60,6 +60,17 @@
         }
       }
 
+      /* Countdown done — whole popup (veil included) fades away. */
+      body.leave {
+        animation: leave 0.4s ease forwards;
+      }
+
+      @keyframes leave {
+        to {
+          opacity: 0;
+        }
+      }
+
       .item + .item {
         margin-top: 2.5rem;
       }

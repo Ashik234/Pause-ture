@@ -72,6 +72,15 @@ function arm() {
   doneBtn.textContent = "Done ✓";
 }
 
+// Countdown finished — the break was taken, so fade out and complete
+// without asking for a click.
+function fadeOutAndComplete() {
+  doneBtn.disabled = true;
+  snoozeBtn.disabled = true;
+  document.body.classList.add("leave");
+  setTimeout(() => invoke("complete_reminder", { kinds }), 450);
+}
+
 if (remaining > 0) {
   doneBtn.disabled = true;
   doneBtn.textContent = `${remaining}s`;
@@ -79,7 +88,7 @@ if (remaining > 0) {
     remaining -= 1;
     if (remaining <= 0) {
       clearInterval(timer);
-      arm();
+      fadeOutAndComplete();
     } else {
       doneBtn.textContent = `${remaining}s`;
     }

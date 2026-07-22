@@ -97,9 +97,21 @@ pub fn spawn(app: tauri::AppHandle, state: &SchedulerState) {
     let paused_until = state.paused_until.clone();
     tauri::async_runtime::spawn(async move {
         let mut tick = tokio::time::interval(Duration::from_secs(TICK_SECS));
+        let mut last_tick = Instant::now();
         loop {
             tick.tick().await;
             let now = Instant::now();
+            let elapsed = now - last_tick;
+            last_tick = now;
+
+            // Workstation locked: freeze timers by pushing every deadline
+            // forward, so no break time accrues behind the lock screen.
+            if crate::guard::is_locked() {
+                for r in reminders.lock().unwrap().iter_mut() {
+                    r.next_due += elapsed;
+                }
+                continue;
+            }
 
             {
                 let mut paused = paused_until.lock().unwrap();

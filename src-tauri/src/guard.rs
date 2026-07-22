@@ -5,6 +5,22 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 
 static HOLDING: AtomicBool = AtomicBool::new(false);
+static LOCKED: AtomicBool = AtomicBool::new(false);
+
+/// True while the workstation is locked (Win+L / lock screen). The input
+/// desktop switches to the secure Winlogon desktop, which this process
+/// cannot open.
+pub fn is_locked() -> bool {
+    let locked = workstation_locked();
+    if locked != LOCKED.swap(locked, Ordering::Relaxed) {
+        if locked {
+            println!("workstation locked — timers frozen");
+        } else {
+            println!("workstation unlocked — timers running");
+        }
+    }
+    locked
+}
 
 pub fn should_hold() -> bool {
     let hold = fullscreen_or_presentation() || mic_in_use();
@@ -66,9 +82,35 @@ fn mic_in_use() -> bool {
     false
 }
 
+#[cfg(windows)]
+fn workstation_locked() -> bool {
+    use windows::Win32::System::StationsAndDesktops::{
+        CloseDesktop, OpenInputDesktop, DESKTOP_ACCESS_FLAGS, DESKTOP_CONTROL_FLAGS,
+        DESKTOP_SWITCHDESKTOP,
+    };
+    match unsafe {
+        OpenInputDesktop(
+            DESKTOP_CONTROL_FLAGS(0),
+            false,
+            DESKTOP_ACCESS_FLAGS(DESKTOP_SWITCHDESKTOP.0 as u32),
+        )
+    } {
+        Ok(desktop) => {
+            let _ = unsafe { CloseDesktop(desktop) };
+            false
+        }
+        Err(_) => true,
+    }
+}
+
 // macOS/Linux: no guard signals implemented yet — never hold.
 #[cfg(not(windows))]
 fn fullscreen_or_presentation() -> bool {
+    false
+}
+
+#[cfg(not(windows))]
+fn workstation_locked() -> bool {
     false
 }
 
