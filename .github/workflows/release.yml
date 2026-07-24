@@ -64,6 +64,6 @@ jobs:
             Unsigned build: right-click the app → **Open** on first launch.
 
             **Linux** — download the `.AppImage` (portable) or `.deb`.
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
