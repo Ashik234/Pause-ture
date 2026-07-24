@@ -112,6 +112,25 @@
         overflow-y: auto;
       }
 
+      /* Slim custom scrollbar — the stock Windows one clashes with the theme. */
+      main::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      main::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      main::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.14);
+        border-radius: 999px;
+        border: 2px solid var(--bg);
+      }
+
+      main::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.28);
+      }
+
       .row {
         display: grid;
         grid-template-columns: auto 1fr auto;
