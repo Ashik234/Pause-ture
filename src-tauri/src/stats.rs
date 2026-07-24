@@ -28,6 +28,7 @@ pub fn bump(app: &AppHandle, key: &str, by: u64) {
 pub struct DayStats {
     pub done: u64,
     pub snoozed: u64,
+    pub locked_secs: u64,
 }
 
 pub fn today_stats(app: &AppHandle) -> DayStats {
@@ -41,5 +42,6 @@ pub fn today_stats(app: &AppHandle) -> DayStats {
     DayStats {
         done: get("done"),
         snoozed: get("snoozed"),
+        locked_secs: get("locked_secs"),
     }
 }

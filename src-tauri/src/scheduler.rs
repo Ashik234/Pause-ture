@@ -110,6 +110,7 @@ pub fn spawn(app: tauri::AppHandle, state: &SchedulerState) {
                 for r in reminders.lock().unwrap().iter_mut() {
                     r.next_due += elapsed;
                 }
+                crate::stats::bump(&app, "locked_secs", elapsed.as_secs());
                 continue;
             }
 

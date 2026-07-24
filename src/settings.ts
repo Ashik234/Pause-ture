@@ -120,16 +120,30 @@ const soundEl = makeToggleRow("🔔", "Popup sound", "Gentle chime when a break 
 const quipsEl = makeToggleRow("🎭", "Joke of the break", "A joke or fact on each popup");
 const autostartEl = makeToggleRow("🚀", "Start on boot", "Launch with Windows");
 
+function formatDuration(secs: number): string {
+  const mins = Math.round(secs / 60);
+  if (mins < 60) return `${mins}m`;
+  return `${Math.floor(mins / 60)}h ${mins % 60}m`;
+}
+
 async function loadStats() {
-  const { done, snoozed } = await invoke<{ done: number; snoozed: number }>(
-    "get_stats",
-  );
-  if (done === 0 && snoozed === 0) return; // nothing to brag or confess yet
+  const { done, snoozed, locked_secs } = await invoke<{
+    done: number;
+    snoozed: number;
+    locked_secs: number;
+  }>("get_stats");
+  if (done === 0 && snoozed === 0 && locked_secs < 60) return; // nothing to brag or confess yet
   const statsEl = document.querySelector<HTMLElement>("#stats")!;
   document.querySelector("#stats-done")!.innerHTML =
     `Today: <b>${done}</b> break${done === 1 ? "" : "s"} taken`;
   document.querySelector("#stats-snoozed")!.innerHTML =
     `<b>${snoozed}</b> snoozed`;
+  if (locked_secs >= 60) {
+    document.querySelector<HTMLElement>("#stats-locked-dot")!.hidden = false;
+    const lockedEl = document.querySelector<HTMLElement>("#stats-locked")!;
+    lockedEl.innerHTML = `🔒 <b>${formatDuration(locked_secs)}</b> locked`;
+    lockedEl.hidden = false;
+  }
   statsEl.hidden = false;
 }
 loadStats();
