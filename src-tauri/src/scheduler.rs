@@ -149,6 +149,25 @@ pub fn spawn(app: tauri::AppHandle, state: &SchedulerState) {
                 }
             }
 
+            // Mid-typing: wait for a keystroke gap before firing, but a due
+            // reminder can only be held so long — overdue grows every held
+            // tick (next_due stays put), and past the cap the popup lands
+            // even mid-typing.
+            {
+                let rs = reminders.lock().unwrap();
+                let max_overdue = rs
+                    .iter()
+                    .filter(|r| r.is_due(now))
+                    .map(|r| now - r.next_due)
+                    .max();
+                if let Some(overdue) = max_overdue {
+                    if overdue < crate::typing::hold_cap() && crate::typing::typing_recently() {
+                        println!("typing — holding reminders");
+                        continue;
+                    }
+                }
+            }
+
             // next_due is only advanced by complete/snooze commands, so an
             // unanswered popup keeps these reminders due; show() just no-ops
             // while it is still on screen.
