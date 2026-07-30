@@ -15,6 +15,13 @@ fn default_true() -> bool {
     true
 }
 
+fn all_categories() -> Vec<String> {
+    ["jokes", "health", "science", "tech", "animals", "history", "mind"]
+        .iter()
+        .map(|s| s.to_string())
+        .collect()
+}
+
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Settings {
     #[serde(default = "default_true")]
@@ -23,6 +30,8 @@ pub struct Settings {
     pub sound: bool,
     #[serde(default = "default_true")]
     pub quips: bool,
+    #[serde(default = "all_categories")]
+    pub quip_categories: Vec<String>,
     pub eyes: ReminderSetting,
     pub posture: ReminderSetting,
     pub water: ReminderSetting,
@@ -45,6 +54,7 @@ impl Default for Settings {
             autostart: true,
             sound: true,
             quips: true,
+            quip_categories: all_categories(),
             eyes: on(eyes),
             posture: on(posture),
             water: on(water),
