@@ -1,6 +1,6 @@
 [package]
 name = "pause-ture"
-version = "0.1.0"
+version = "2.0.0"
 description = "Break reminder app for Windows — walk, hydrate, unslouch, rest eyes"
 authors = ["ashik-dignizant"]
 edition = "2021"
