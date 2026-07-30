@@ -16,7 +16,7 @@ fn default_true() -> bool {
 }
 
 fn all_categories() -> Vec<String> {
-    ["jokes", "health", "science", "tech", "animals", "history", "mind"]
+    ["jokes", "health", "science", "tech", "animals", "history", "mind", "oceans"]
         .iter()
         .map(|s| s.to_string())
         .collect()

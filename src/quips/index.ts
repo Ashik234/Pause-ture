@@ -5,6 +5,7 @@ import { TECH } from "./tech";
 import { ANIMALS } from "./animals";
 import { HISTORY } from "./history";
 import { MIND } from "./mind";
+import { OCEANS } from "./oceans";
 
 export type Category =
   | "jokes"
@@ -13,7 +14,8 @@ export type Category =
   | "tech"
   | "animals"
   | "history"
-  | "mind";
+  | "mind"
+  | "oceans";
 
 export const CATEGORIES: Record<
   Category,
@@ -26,6 +28,7 @@ export const CATEGORIES: Record<
   animals: { icon: "🐾", label: "Animals & nature", entries: ANIMALS },
   history: { icon: "🏛️", label: "History", entries: HISTORY },
   mind: { icon: "🧠", label: "Mind & psychology", entries: MIND },
+  oceans: { icon: "🌊", label: "Oceans", entries: OCEANS },
 };
 
 export const ALL_CATEGORIES = Object.keys(CATEGORIES) as Category[];
