@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { randomQuip } from "./quips";
+import { CATEGORIES, randomQuip } from "./quips";
 
 type Copy = { emoji: string; title: string; message: string };
 
@@ -132,16 +132,18 @@ function playChime() {
   }
 }
 
-function showQuip() {
-  const { kind, text } = randomQuip();
+function showQuip(categories: string[]) {
+  const { category, text } = randomQuip(categories);
   const el = document.querySelector("#quip")!;
-  el.textContent = `${kind === "joke" ? "🎭" : "💡"} ${text}`;
+  el.textContent = `${CATEGORIES[category].icon} ${text}`;
   el.classList.add("show");
 }
 
-invoke<{ sound: boolean; quips: boolean }>("get_settings")
+invoke<{ sound: boolean; quips: boolean; quip_categories?: string[] }>(
+  "get_settings",
+)
   .then((prefs) => {
     if (prefs.sound) playChime();
-    if (prefs.quips) showQuip();
+    if (prefs.quips) showQuip(prefs.quip_categories ?? []);
   })
   .catch(() => {});
