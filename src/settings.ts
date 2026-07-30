@@ -171,26 +171,61 @@ function formatDuration(secs: number): string {
 }
 
 async function loadStats() {
-  const { done, snoozed, locked_secs } = await invoke<{
+  const { done, snoozed, locked_secs, locks } = await invoke<{
     done: number;
     snoozed: number;
     locked_secs: number;
+    locks: number;
   }>("get_stats");
-  if (done === 0 && snoozed === 0 && locked_secs < 60) return; // nothing to brag or confess yet
+  if (done === 0 && snoozed === 0 && locked_secs < 60 && locks === 0) return; // nothing to brag or confess yet
   const statsEl = document.querySelector<HTMLElement>("#stats")!;
   document.querySelector("#stats-done")!.innerHTML =
     `Today: <b>${done}</b> break${done === 1 ? "" : "s"} taken`;
   document.querySelector("#stats-snoozed")!.innerHTML =
     `<b>${snoozed}</b> snoozed`;
-  if (locked_secs >= 60) {
+  if (locked_secs >= 60 || locks > 0) {
+    const parts = [];
+    if (locks > 0) parts.push(`${locks}×`);
+    if (locked_secs >= 60) parts.push(formatDuration(locked_secs));
     document.querySelector<HTMLElement>("#stats-locked-dot")!.hidden = false;
     const lockedEl = document.querySelector<HTMLElement>("#stats-locked")!;
-    lockedEl.innerHTML = `🔒 <b>${formatDuration(locked_secs)}</b> locked`;
+    lockedEl.innerHTML = `🔒 <b>${parts.join(" · ")}</b> locked`;
     lockedEl.hidden = false;
   }
   statsEl.hidden = false;
 }
 loadStats();
+
+// quick actions — same behavior as the tray menu
+const breakBtn = document.querySelector<HTMLButtonElement>("#break-now")!;
+const pauseBtn = document.querySelector<HTMLButtonElement>("#pause")!;
+const resumeBtn = document.querySelector<HTMLButtonElement>("#resume")!;
+
+function setPausedUi(until: string | null) {
+  pauseBtn.disabled = until !== null;
+  resumeBtn.disabled = until === null;
+  pauseBtn.textContent = until ? `⏸ Paused until ${until}` : "⏸ Pause 1 hour";
+}
+
+breakBtn.addEventListener("click", async () => {
+  await invoke("break_now");
+  breakBtn.textContent = "✓ Timers reset";
+  setTimeout(() => (breakBtn.textContent = "☕ Taking a break"), 1800);
+});
+
+pauseBtn.addEventListener("click", async () => {
+  const until = await invoke<string>("pause_reminders");
+  setPausedUi(until);
+});
+
+resumeBtn.addEventListener("click", async () => {
+  await invoke("resume_reminders");
+  setPausedUi(null);
+});
+
+invoke<string | null>("get_pause_state")
+  .then(setPausedUi)
+  .catch(() => {});
 
 async function loadCurrent() {
   const current = await invoke<Settings>("get_settings");

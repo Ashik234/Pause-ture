@@ -1,6 +1,8 @@
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
+use tauri::Manager;
+
 const TICK_SECS: u64 = 30;
 
 /// Reminders due within this window of a firing popup ride along in it.
@@ -83,6 +85,36 @@ impl SchedulerState {
     }
 }
 
+/// User is stepping away voluntarily — every timer restarts from now.
+/// Shared by the tray menu and the settings window.
+pub fn reset_all_timers(app: &tauri::AppHandle) {
+    let state = app.state::<SchedulerState>();
+    let now = Instant::now();
+    for r in state.reminders.lock().unwrap().iter_mut() {
+        r.next_due = now + r.interval;
+    }
+    println!("break taken — all timers reset");
+}
+
+pub fn pause(app: &tauri::AppHandle) -> chrono::DateTime<chrono::Local> {
+    let state = app.state::<SchedulerState>();
+    *state.paused_until.lock().unwrap() = Some(Instant::now() + pause_duration());
+    let until = chrono::Local::now() + chrono::Duration::from_std(pause_duration()).unwrap();
+    // Tray menu/tooltip must be touched from the main thread.
+    let app_main = app.clone();
+    let _ = app.run_on_main_thread(move || crate::set_pause_ui(&app_main, Some(until)));
+    println!("paused until {}", until.format("%H:%M"));
+    until
+}
+
+pub fn resume(app: &tauri::AppHandle) {
+    let state = app.state::<SchedulerState>();
+    *state.paused_until.lock().unwrap() = None;
+    let app_main = app.clone();
+    let _ = app.run_on_main_thread(move || crate::set_pause_ui(&app_main, None));
+    println!("resumed");
+}
+
 pub fn reminders_from(settings: &crate::settings::Settings) -> Vec<Reminder> {
     vec![
         Reminder::new("eyes", settings.eyes),
@@ -98,6 +130,7 @@ pub fn spawn(app: tauri::AppHandle, state: &SchedulerState) {
     tauri::async_runtime::spawn(async move {
         let mut tick = tokio::time::interval(Duration::from_secs(TICK_SECS));
         let mut last_tick = Instant::now();
+        let mut was_locked = false;
         loop {
             tick.tick().await;
             let now = Instant::now();
@@ -106,7 +139,12 @@ pub fn spawn(app: tauri::AppHandle, state: &SchedulerState) {
 
             // Workstation locked: freeze timers by pushing every deadline
             // forward, so no break time accrues behind the lock screen.
-            if crate::guard::is_locked() {
+            let locked = crate::guard::is_locked();
+            if locked && !was_locked {
+                crate::stats::bump(&app, "locks", 1);
+            }
+            was_locked = locked;
+            if locked {
                 for r in reminders.lock().unwrap().iter_mut() {
                     r.next_due += elapsed;
                 }

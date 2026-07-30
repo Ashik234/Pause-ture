@@ -65,6 +65,31 @@ pub fn get_stats(app: AppHandle) -> crate::stats::DayStats {
 }
 
 #[tauri::command]
+pub fn break_now(app: AppHandle) {
+    crate::scheduler::reset_all_timers(&app);
+}
+
+#[tauri::command]
+pub fn pause_reminders(app: AppHandle) -> String {
+    crate::scheduler::pause(&app).format("%H:%M").to_string()
+}
+
+#[tauri::command]
+pub fn resume_reminders(app: AppHandle) {
+    crate::scheduler::resume(&app);
+}
+
+/// Wall-clock time the current pause ends ("HH:MM"), or None when running.
+#[tauri::command]
+pub fn get_pause_state(sched: State<SchedulerState>) -> Option<String> {
+    sched.paused_until.lock().unwrap().and_then(|until| {
+        let remaining = until.checked_duration_since(Instant::now())?;
+        let until_wall = chrono::Local::now() + chrono::Duration::from_std(remaining).ok()?;
+        Some(until_wall.format("%H:%M").to_string())
+    })
+}
+
+#[tauri::command]
 pub fn get_settings(app: AppHandle) -> Settings {
     Settings::load(&app)
 }

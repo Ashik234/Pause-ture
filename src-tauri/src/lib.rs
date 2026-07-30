@@ -50,7 +50,7 @@ fn open_settings(app: &AppHandle) {
         WebviewUrl::App("settings.html".into()),
     )
     .title("Pause-ture Settings")
-    .inner_size(420.0, 760.0)
+    .inner_size(430.0, 800.0)
     .resizable(false)
     .build();
     if let Err(e) = result {
@@ -78,30 +78,11 @@ fn setup_tray(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .show_menu_on_left_click(true)
         .on_menu_event(|app, event| match event.id.as_ref() {
             "quit" => app.exit(0),
-            // User is stepping away voluntarily — every timer restarts from now.
-            "break_now" => {
-                let state = app.state::<scheduler::SchedulerState>();
-                let now = std::time::Instant::now();
-                for r in state.reminders.lock().unwrap().iter_mut() {
-                    r.next_due = now + r.interval;
-                }
-                println!("break taken — all timers reset");
-            }
+            "break_now" => scheduler::reset_all_timers(app),
             "pause" => {
-                let state = app.state::<scheduler::SchedulerState>();
-                *state.paused_until.lock().unwrap() =
-                    Some(std::time::Instant::now() + scheduler::pause_duration());
-                let until = chrono::Local::now()
-                    + chrono::Duration::from_std(scheduler::pause_duration()).unwrap();
-                set_pause_ui(app, Some(until));
-                println!("paused until {}", until.format("%H:%M"));
+                scheduler::pause(app);
             }
-            "resume" => {
-                let state = app.state::<scheduler::SchedulerState>();
-                *state.paused_until.lock().unwrap() = None;
-                set_pause_ui(app, None);
-                println!("resumed");
-            }
+            "resume" => scheduler::resume(app),
             "settings" => open_settings(app),
             _ => {}
         })
@@ -156,7 +137,11 @@ pub fn run() {
             commands::snooze_reminder,
             commands::get_settings,
             commands::save_settings,
-            commands::get_stats
+            commands::get_stats,
+            commands::break_now,
+            commands::pause_reminders,
+            commands::resume_reminders,
+            commands::get_pause_state
         ])
         .setup(|app| {
             setup_tray(app)?;

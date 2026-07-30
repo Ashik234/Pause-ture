@@ -290,6 +290,38 @@
         outline-offset: 2px;
       }
 
+      /* quick actions */
+      #actions {
+        display: flex;
+        gap: 0.5rem;
+        margin: 0 1.4rem 0.75rem;
+      }
+
+      #actions button {
+        flex: 1;
+        padding: 0.55rem 0.6rem;
+        font-size: 0.82rem;
+        font-weight: 600;
+        font-family: inherit;
+        color: var(--text);
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        cursor: pointer;
+        transition: background 0.15s ease, border-color 0.15s ease,
+          opacity 0.15s ease;
+      }
+
+      #actions button:hover:not(:disabled) {
+        background: var(--card-hover);
+        border-color: var(--accent);
+      }
+
+      #actions button:disabled {
+        opacity: 0.4;
+        cursor: default;
+      }
+
       /* category chips */
       .chips {
         display: flex;
@@ -389,6 +421,12 @@
       <span id="stats-snoozed"></span>
       <span class="dot" id="stats-locked-dot" hidden>·</span>
       <span id="stats-locked" hidden></span>
+    </div>
+
+    <div id="actions">
+      <button id="break-now">☕ Taking a break</button>
+      <button id="pause">⏸ Pause 1 hour</button>
+      <button id="resume" disabled>▶ Resume</button>
     </div>
 
     <main id="rows"></main>
