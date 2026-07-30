@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { ALL_CATEGORIES, CATEGORIES, type Category } from "./quips";
 
 type ReminderSetting = { enabled: boolean; interval_min: number };
 type Kind = "eyes" | "posture" | "water" | "walk";
@@ -6,6 +7,7 @@ type Settings = Record<Kind, ReminderSetting> & {
   autostart: boolean;
   sound: boolean;
   quips: boolean;
+  quip_categories: string[];
 };
 
 const LABELS: Record<Kind, { emoji: string; name: string; sub: string }> = {
@@ -96,7 +98,11 @@ function makeRow(kind: Kind) {
 for (const kind of KINDS) makeRow(kind);
 
 // switch-only rows (no stepper)
-function makeToggleRow(emoji: string, name: string, sub: string): HTMLInputElement {
+function makeToggleRow(
+  emoji: string,
+  name: string,
+  sub: string,
+): { input: HTMLInputElement; info: HTMLDivElement } {
   const row = document.createElement("div");
   row.className = "row";
   const tile = document.createElement("div");
@@ -113,12 +119,50 @@ function makeToggleRow(emoji: string, name: string, sub: string): HTMLInputEleme
   const { wrap, input } = makeSwitch();
   row.append(tile, info, wrap);
   rowsEl.appendChild(row);
-  return input;
+  return { input, info };
 }
 
-const soundEl = makeToggleRow("🔔", "Popup sound", "Gentle chime when a break appears");
-const quipsEl = makeToggleRow("🎭", "Joke of the break", "A joke or fact on each popup");
-const autostartEl = makeToggleRow("🚀", "Start on boot", "Launch with Windows");
+const soundEl = makeToggleRow("🔔", "Popup sound", "Gentle chime when a break appears").input;
+const quipsRow = makeToggleRow("🎭", "Joke of the break", "A joke or fact on each popup");
+const quipsEl = quipsRow.input;
+const autostartEl = makeToggleRow("🚀", "Start on boot", "Launch with Windows").input;
+
+const chipsWrap = document.createElement("div");
+chipsWrap.className = "chips";
+const chips = {} as Record<Category, HTMLButtonElement>;
+for (const key of ALL_CATEGORIES) {
+  const { icon, label } = CATEGORIES[key];
+  const chip = document.createElement("button");
+  chip.type = "button";
+  chip.className = "chip";
+  chip.textContent = `${icon} ${label}`;
+  chip.setAttribute("aria-pressed", "false");
+  chip.addEventListener("click", () => {
+    // Never allow zero active categories while the master toggle exists.
+    const isLastActive =
+      chip.classList.contains("on") &&
+      chipsWrap.querySelectorAll(".chip.on").length === 1;
+    if (isLastActive) return;
+    const on = chip.classList.toggle("on");
+    chip.setAttribute("aria-pressed", String(on));
+  });
+  chips[key] = chip;
+  chipsWrap.appendChild(chip);
+}
+quipsRow.info.appendChild(chipsWrap);
+quipsEl.addEventListener("change", () => {
+  chipsWrap.hidden = !quipsEl.checked;
+});
+
+function setActiveChips(keys: string[]) {
+  const valid = keys.filter((k): k is Category => k in CATEGORIES);
+  const active = valid.length > 0 ? valid : ALL_CATEGORIES;
+  for (const key of ALL_CATEGORIES) {
+    const on = active.includes(key);
+    chips[key].classList.toggle("on", on);
+    chips[key].setAttribute("aria-pressed", String(on));
+  }
+}
 
 function formatDuration(secs: number): string {
   const mins = Math.round(secs / 60);
@@ -153,6 +197,8 @@ async function loadCurrent() {
   autostartEl.checked = current.autostart;
   soundEl.checked = current.sound;
   quipsEl.checked = current.quips;
+  setActiveChips(current.quip_categories ?? []);
+  chipsWrap.hidden = !current.quips;
   for (const kind of KINDS) {
     inputs[kind].enabled.checked = current[kind].enabled;
     inputs[kind].interval.value = String(current[kind].interval_min);
@@ -180,6 +226,9 @@ saveBtn.addEventListener("click", async () => {
     autostart: autostartEl.checked,
     sound: soundEl.checked,
     quips: quipsEl.checked,
+    quip_categories: ALL_CATEGORIES.filter((k) =>
+      chips[k].classList.contains("on"),
+    ),
   } as Settings;
   for (const kind of KINDS) {
     const interval_min = clamp(Number(inputs[kind].interval.value) || 1);
