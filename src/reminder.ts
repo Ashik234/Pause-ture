@@ -132,11 +132,41 @@ function playChime() {
   }
 }
 
-function showQuip(categories: string[]) {
-  const { category, text } = randomQuip(categories);
+function renderQuip(icon: string, text: string) {
   const el = document.querySelector("#quip")!;
-  el.textContent = `${CATEGORIES[category].icon} ${text}`;
+  el.textContent = `${icon} ${text}`;
   el.classList.add("show");
+}
+
+// Wikimedia's free "on this day" feed — real events for today's date.
+async function fetchOnThisDay(): Promise<string> {
+  const now = new Date();
+  const url = `https://api.wikimedia.org/feed/v1/wikipedia/en/onthisday/selected/${now.getMonth() + 1}/${now.getDate()}`;
+  const res = await fetch(url, { signal: AbortSignal.timeout(3000) });
+  if (!res.ok) throw new Error(`onthisday ${res.status}`);
+  const data: { selected: { year: number; text: string }[] } = await res.json();
+  const pick = data.selected[Math.floor(Math.random() * data.selected.length)];
+  if (!pick) throw new Error("onthisday empty");
+  return `On this day in ${pick.year}: ${pick.text}`;
+}
+
+async function showQuip(categories: string[]) {
+  // "On this day" is live-fetched, so it can't sit in randomQuip's static
+  // pool — give it an even share among the enabled categories here instead.
+  const enabled = categories.length > 0 ? categories : Object.keys(CATEGORIES);
+  const wantsLive = enabled.includes("onthisday");
+  if (wantsLive && Math.random() < 1 / enabled.length) {
+    try {
+      renderQuip(CATEGORIES.onthisday.icon, await fetchOnThisDay());
+      return;
+    } catch {
+      // Offline or slow — fall through to a bundled quip.
+    }
+  }
+  const { category, text } = randomQuip(
+    categories.filter((c) => c !== "onthisday"),
+  );
+  renderQuip(CATEGORIES[category].icon, text);
 }
 
 invoke<{ sound: boolean; quips: boolean; quip_categories?: string[] }>(

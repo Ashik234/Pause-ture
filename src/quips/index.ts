@@ -15,7 +15,8 @@ export type Category =
   | "animals"
   | "history"
   | "mind"
-  | "oceans";
+  | "oceans"
+  | "onthisday";
 
 export const CATEGORIES: Record<
   Category,
@@ -29,6 +30,9 @@ export const CATEGORIES: Record<
   history: { icon: "🏛️", label: "History", entries: HISTORY },
   mind: { icon: "🧠", label: "Mind & psychology", entries: MIND },
   oceans: { icon: "🌊", label: "Oceans", entries: OCEANS },
+  // Live category — facts are fetched from Wikipedia at popup time, so it
+  // ships no bundled entries and contributes nothing to randomQuip's pool.
+  onthisday: { icon: "📅", label: "On this day", entries: [] },
 };
 
 export const ALL_CATEGORIES = Object.keys(CATEGORIES) as Category[];

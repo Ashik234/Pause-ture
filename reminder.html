@@ -102,7 +102,23 @@
         text-shadow: 0 1px 12px rgba(0, 0, 0, 0.6);
       }
 
-      /* Merged popups: shrink items so several fit comfortably. */
+      /* Merged popups: cards sit side by side so the area below stays open. */
+      body.multi .card {
+        max-width: 72rem;
+      }
+
+      body.multi #items {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        gap: 2rem;
+      }
+
+      body.multi .item {
+        flex: 1 1 0;
+        max-width: 15rem;
+      }
+
       body.multi .tile {
         width: 64px;
         height: 64px;
@@ -112,16 +128,16 @@
 
       body.multi h1 {
         margin-top: 0.7rem;
-        font-size: 1.8rem;
+        font-size: 1.6rem;
       }
 
       body.multi .message {
         margin-top: 0.35rem;
-        font-size: 1.1rem;
+        font-size: 1rem;
       }
 
       body.multi .item + .item {
-        margin-top: 1.8rem;
+        margin-top: 0;
       }
 
       #done {
