@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { CATEGORIES, randomQuip } from "./quips";
+import { CATEGORIES, randomQuip, type Category } from "./quips";
 
 type Copy = { emoji: string; title: string; message: string };
 
@@ -150,21 +150,50 @@ async function fetchOnThisDay(): Promise<string> {
   return `On this day in ${pick.year}: ${pick.text}`;
 }
 
+// Wiktionary's word-of-the-day feed. Entries embed HTML whose stable
+// element ids (WOTD-rss-title/-description) are the supported way to parse it.
+async function fetchWordOfTheDay(): Promise<string> {
+  const url =
+    "https://en.wiktionary.org/w/api.php?action=featuredfeed&feed=wotd&feedformat=atom&origin=*";
+  const res = await fetch(url, { signal: AbortSignal.timeout(3000) });
+  if (!res.ok) throw new Error(`wordofday ${res.status}`);
+  const xml = new DOMParser().parseFromString(await res.text(), "text/xml");
+  const entries = xml.querySelectorAll("entry");
+  // Feed lists several days; the last entry is today's word.
+  const html = entries[entries.length - 1]?.querySelector("summary")
+    ?.textContent;
+  const doc = new DOMParser().parseFromString(html ?? "", "text/html");
+  const word = doc.querySelector("#WOTD-rss-title")?.textContent?.trim();
+  const def = doc
+    .querySelector("#WOTD-rss-description")
+    ?.textContent?.trim()
+    .replace(/\s+/g, " ");
+  if (!word || !def) throw new Error("wordofday parse");
+  const short = def.length > 160 ? `${def.slice(0, 157)}…` : def;
+  return `Word of the day: ${word} — ${short}`;
+}
+
+// Live categories are fetched at popup time, so they can't sit in
+// randomQuip's static pool — they get an even share among enabled ones here.
+const LIVE_QUIPS: Partial<Record<Category, () => Promise<string>>> = {
+  onthisday: fetchOnThisDay,
+  wordofday: fetchWordOfTheDay,
+};
+
 async function showQuip(categories: string[]) {
-  // "On this day" is live-fetched, so it can't sit in randomQuip's static
-  // pool — give it an even share among the enabled categories here instead.
   const enabled = categories.length > 0 ? categories : Object.keys(CATEGORIES);
-  const wantsLive = enabled.includes("onthisday");
-  if (wantsLive && Math.random() < 1 / enabled.length) {
+  const live = enabled.filter((c): c is Category => c in LIVE_QUIPS);
+  if (live.length > 0 && Math.random() < live.length / enabled.length) {
+    const pick = live[Math.floor(Math.random() * live.length)];
     try {
-      renderQuip(CATEGORIES.onthisday.icon, await fetchOnThisDay());
+      renderQuip(CATEGORIES[pick].icon, await LIVE_QUIPS[pick]!());
       return;
     } catch {
       // Offline or slow — fall through to a bundled quip.
     }
   }
   const { category, text } = randomQuip(
-    categories.filter((c) => c !== "onthisday"),
+    categories.filter((c) => !(c in LIVE_QUIPS)),
   );
   renderQuip(CATEGORIES[category].icon, text);
 }
