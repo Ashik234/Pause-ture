@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(sed -i 's/\"version\": \"2.0.0\"/\"version\": \"2.1.0\"/' package.json src-tauri/tauri.conf.json)",
+      "Bash(sed -i '3s/version = \"2.0.0\"/version = \"2.1.0\"/' src-tauri/Cargo.toml)",
+      "Bash(sed -i '2545s/version = \"2.0.0\"/version = \"2.1.0\"/' src-tauri/Cargo.lock)",
+      "PowerShell(git add package.json src-tauri/tauri.conf.json src-tauri/Cargo.toml src-tauri/Cargo.lock)",
+      "PowerShell(git commit -m \"chore: bump version to 2.1.0\")",
+      "PowerShell(git tag v2.1.0)",
+      "PowerShell(git push origin main v2.1.0)",
+      "PowerShell(git tag -d v2.1.0)",
+      "PowerShell(git reset --soft HEAD~1)",
+      "PowerShell(git reset --soft origin/main)"
+    ]
+  }
+}
