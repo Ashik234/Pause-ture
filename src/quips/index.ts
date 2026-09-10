@@ -6,6 +6,7 @@ import { ANIMALS } from "./animals";
 import { HISTORY } from "./history";
 import { MIND } from "./mind";
 import { OCEANS } from "./oceans";
+import { MATHS } from "./maths";
 
 export type Category =
   | "jokes"
@@ -16,6 +17,7 @@ export type Category =
   | "history"
   | "mind"
   | "oceans"
+  | "maths"
   | "onthisday"
   | "wordofday";
 
@@ -31,6 +33,7 @@ export const CATEGORIES: Record<
   history: { icon: "🏛️", label: "History", entries: HISTORY },
   mind: { icon: "🧠", label: "Mind & psychology", entries: MIND },
   oceans: { icon: "🌊", label: "Oceans", entries: OCEANS },
+  maths: { icon: "🔢", label: "Mathematics", entries: MATHS },
   // Live categories — fetched from Wikimedia at popup time, so they ship
   // no bundled entries and contribute nothing to randomQuip's pool.
   onthisday: { icon: "📅", label: "On this day", entries: [] },
