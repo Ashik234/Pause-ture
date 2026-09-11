@@ -74,13 +74,17 @@ impl Reminder {
 pub struct SchedulerState {
     pub reminders: Arc<Mutex<Vec<Reminder>>>,
     pub paused_until: Arc<Mutex<Option<Instant>>>,
+    /// Mirrors the saved setting so the tick loop picks up edits without a
+    /// restart, the same way reminder intervals do.
+    pub work_hours: Arc<Mutex<crate::workhours::WorkHours>>,
 }
 
 impl SchedulerState {
-    pub fn new(reminders: Vec<Reminder>) -> Self {
+    pub fn new(reminders: Vec<Reminder>, work_hours: crate::workhours::WorkHours) -> Self {
         Self {
             reminders: Arc::new(Mutex::new(reminders)),
             paused_until: Arc::new(Mutex::new(None)),
+            work_hours: Arc::new(Mutex::new(work_hours)),
         }
     }
 }
@@ -127,6 +131,7 @@ pub fn reminders_from(settings: &crate::settings::Settings) -> Vec<Reminder> {
 pub fn spawn(app: tauri::AppHandle, state: &SchedulerState) {
     let reminders = state.reminders.clone();
     let paused_until = state.paused_until.clone();
+    let work_hours = state.work_hours.clone();
     tauri::async_runtime::spawn(async move {
         let mut tick = tokio::time::interval(Duration::from_secs(TICK_SECS));
         let mut last_tick = Instant::now();
@@ -149,6 +154,16 @@ pub fn spawn(app: tauri::AppHandle, state: &SchedulerState) {
                     r.next_due += elapsed;
                 }
                 crate::stats::bump(&app, "locked_secs", elapsed.as_secs());
+                continue;
+            }
+
+            // Off the clock: freeze deadlines like the lock guard does, so a
+            // reminder half-way through its interval at 5:58pm resumes there
+            // in the morning instead of firing the moment work hours open.
+            if !work_hours.lock().unwrap().allows_now() {
+                for r in reminders.lock().unwrap().iter_mut() {
+                    r.next_due += elapsed;
+                }
                 continue;
             }
 

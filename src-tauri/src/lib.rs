@@ -5,6 +5,7 @@ mod scheduler;
 mod settings;
 mod stats;
 mod typing;
+mod workhours;
 
 use std::sync::Mutex;
 
@@ -148,9 +149,10 @@ pub fn run() {
             typing::spawn_hook();
             let stored = settings::Settings::load(app.app_handle());
             settings::apply_autostart(app.app_handle(), stored.autostart);
-            app.manage(scheduler::SchedulerState::new(scheduler::reminders_from(
-                &stored,
-            )));
+            app.manage(scheduler::SchedulerState::new(
+                scheduler::reminders_from(&stored),
+                stored.work_hours.clone(),
+            ));
             scheduler::spawn(
                 app.app_handle().clone(),
                 &app.state::<scheduler::SchedulerState>(),

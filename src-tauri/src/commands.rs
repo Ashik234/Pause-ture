@@ -103,6 +103,8 @@ pub fn save_settings(
     settings.save(&app).map_err(|e| e.to_string())?;
     crate::settings::apply_autostart(&app, settings.autostart);
 
+    *sched.work_hours.lock().unwrap() = settings.work_hours.clone();
+
     // Apply live: new intervals count from now.
     let now = Instant::now();
     for r in sched.reminders.lock().unwrap().iter_mut() {

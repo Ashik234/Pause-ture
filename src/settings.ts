@@ -8,7 +8,25 @@ type Settings = Record<Kind, ReminderSetting> & {
   sound: boolean;
   quips: boolean;
   quip_categories: string[];
+  work_hours: WorkHours;
 };
+type WorkHours = {
+  enabled: boolean;
+  start: string;
+  end: string;
+  days: number[];
+};
+
+// ISO weekdays: 1 = Monday … 7 = Sunday, matching the Rust side.
+const DAY_LABELS: [number, string][] = [
+  [1, "Mon"],
+  [2, "Tue"],
+  [3, "Wed"],
+  [4, "Thu"],
+  [5, "Fri"],
+  [6, "Sat"],
+  [7, "Sun"],
+];
 
 const LABELS: Record<Kind, { emoji: string; name: string; sub: string }> = {
   eyes: { emoji: "👀", name: "Look away", sub: "20-20-20 rule for your eyes" },
@@ -127,6 +145,55 @@ const quipsRow = makeToggleRow("🎭", "Joke of the break", "A joke or fact on e
 const quipsEl = quipsRow.input;
 const autostartEl = makeToggleRow("🚀", "Start on boot", "Launch with Windows").input;
 
+const hoursRow = makeToggleRow(
+  "🕘",
+  "Work hours only",
+  "Stay quiet outside these hours",
+);
+const hoursEl = hoursRow.input;
+
+const hoursWrap = document.createElement("div");
+hoursWrap.className = "hours";
+const startEl = document.createElement("input");
+startEl.type = "time";
+startEl.className = "time";
+const toEl = document.createElement("span");
+toEl.className = "to";
+toEl.textContent = "to";
+const endEl = document.createElement("input");
+endEl.type = "time";
+endEl.className = "time";
+hoursWrap.append(startEl, toEl, endEl);
+
+const daysWrap = document.createElement("div");
+daysWrap.className = "chips";
+const dayChips = new Map<number, HTMLButtonElement>();
+for (const [day, label] of DAY_LABELS) {
+  const chip = document.createElement("button");
+  chip.type = "button";
+  chip.className = "chip";
+  chip.textContent = label;
+  chip.setAttribute("aria-pressed", "false");
+  chip.addEventListener("click", () => {
+    // Zero days would silence the app entirely; keep at least one.
+    const isLastOn =
+      chip.classList.contains("on") &&
+      daysWrap.querySelectorAll(".chip.on").length === 1;
+    if (isLastOn) return;
+    const on = chip.classList.toggle("on");
+    chip.setAttribute("aria-pressed", String(on));
+  });
+  dayChips.set(day, chip);
+  daysWrap.appendChild(chip);
+}
+hoursRow.info.append(hoursWrap, daysWrap);
+
+function setHoursVisible(visible: boolean) {
+  hoursWrap.hidden = !visible;
+  daysWrap.hidden = !visible;
+}
+hoursEl.addEventListener("change", () => setHoursVisible(hoursEl.checked));
+
 const chipsWrap = document.createElement("div");
 chipsWrap.className = "chips";
 const chips = {} as Record<Category, HTMLButtonElement>;
@@ -234,6 +301,22 @@ async function loadCurrent() {
   quipsEl.checked = current.quips;
   setActiveChips(current.quip_categories ?? []);
   chipsWrap.hidden = !current.quips;
+  const wh = current.work_hours ?? {
+    enabled: false,
+    start: "09:00",
+    end: "18:00",
+    days: [1, 2, 3, 4, 5],
+  };
+  hoursEl.checked = wh.enabled;
+  startEl.value = wh.start;
+  endEl.value = wh.end;
+  const activeDays = wh.days?.length ? wh.days : [1, 2, 3, 4, 5];
+  for (const [day, chip] of dayChips) {
+    const on = activeDays.includes(day);
+    chip.classList.toggle("on", on);
+    chip.setAttribute("aria-pressed", String(on));
+  }
+  setHoursVisible(wh.enabled);
   for (const kind of KINDS) {
     inputs[kind].enabled.checked = current[kind].enabled;
     inputs[kind].interval.value = String(current[kind].interval_min);
@@ -264,6 +347,14 @@ saveBtn.addEventListener("click", async () => {
     quip_categories: ALL_CATEGORIES.filter((k) =>
       chips[k].classList.contains("on"),
     ),
+    work_hours: {
+      enabled: hoursEl.checked,
+      start: startEl.value || "09:00",
+      end: endEl.value || "18:00",
+      days: [...dayChips]
+        .filter(([, chip]) => chip.classList.contains("on"))
+        .map(([day]) => day),
+    },
   } as Settings;
   for (const kind of KINDS) {
     const interval_min = clamp(Number(inputs[kind].interval.value) || 1);

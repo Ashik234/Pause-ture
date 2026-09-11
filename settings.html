@@ -323,6 +323,44 @@
       }
 
       /* category chips */
+      .hours {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.6rem;
+      }
+
+      .hours[hidden] {
+        display: none;
+      }
+
+      .time {
+        padding: 0.28rem 0.5rem;
+        font-size: 0.8rem;
+        font-family: inherit;
+        font-variant-numeric: tabular-nums;
+        color: var(--text);
+        background: var(--bg);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+
+      .time:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+
+      /* Dark-theme the native clock button so it stays visible. */
+      .time::-webkit-calendar-picker-indicator {
+        filter: invert(0.7);
+        cursor: pointer;
+      }
+
+      .to {
+        font-size: 0.78rem;
+        color: var(--muted);
+      }
+
       .chips {
         display: flex;
         flex-wrap: wrap;

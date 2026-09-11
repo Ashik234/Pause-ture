@@ -41,6 +41,7 @@ Pause-ture lives in your system tray and interrupts you with a fullscreen, alway
 | **Lock** | Timers freeze while the workstation is locked, and your locked time counts as rest |
 | **Meeting** | Calls and presentations hold reminders back |
 | **Typing** | Mid-sentence? The popup waits for a gap, capped at 5 minutes |
+| **Work hours** | Off by default. Set a daily window and which weekdays count, and the app stays silent outside them — overnight windows like 22:00–06:00 work too |
 
 ### Settings
 
@@ -101,6 +102,7 @@ src-tauri/src/
   scheduler.rs        30s tick loop, due/merge/idle/pause logic
   guard.rs            lock, meeting and idle detection
   typing.rs           holds the popup while you're mid-sentence
+  workhours.rs        daily/weekday window, freezes timers off the clock
   stats.rs            daily done/snoozed and screen-locked totals
   popup.rs            fullscreen always-on-top popup window
   commands.rs         complete, snooze, get/save settings

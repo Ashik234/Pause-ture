@@ -32,6 +32,8 @@ pub struct Settings {
     pub quips: bool,
     #[serde(default = "all_categories")]
     pub quip_categories: Vec<String>,
+    #[serde(default)]
+    pub work_hours: crate::workhours::WorkHours,
     pub eyes: ReminderSetting,
     pub posture: ReminderSetting,
     pub water: ReminderSetting,
@@ -55,6 +57,7 @@ impl Default for Settings {
             sound: true,
             quips: true,
             quip_categories: all_categories(),
+            work_hours: crate::workhours::WorkHours::default(),
             eyes: on(eyes),
             posture: on(posture),
             water: on(water),
