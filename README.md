@@ -22,6 +22,19 @@ Pause-ture lives in your system tray and interrupts you with a fullscreen, alway
 | 💧 Drink water | 45 min | Instant Done ✓ |
 | 🚶 Take a walk | 60 min | Instant Done ✓ |
 
+Gated breaks complete themselves when the countdown ends — the popup fades out
+on its own, so a finished eye break needs no click at all.
+
+### Keyboard
+
+| Key | Action |
+| --- | --- |
+| `Enter` / `Space` | Done — once the countdown has finished |
+| `Esc` | Snooze 5 minutes — works during the countdown too |
+
+Keys are ignored while a countdown is running and for a moment after it opens,
+so a keystroke already in flight can't dismiss the break you just earned.
+
 ## Features
 
 - **Fullscreen takeover** — translucent overlay on top of everything; your work stays visible behind it
@@ -30,7 +43,6 @@ Pause-ture lives in your system tray and interrupts you with a fullscreen, alway
 - **Snooze 5 min** — escape hatch for calls and meetings, usable even mid-countdown
 - **Pause 1 hour** — from the tray, for deep-work blocks
 - **Fact of the break** — every popup ends with something worth knowing (see below)
-- **Keyboard** — Enter or Space completes a break once its gate opens, Esc snoozes
 - **Autostart** — launches with Windows (toggleable)
 - ~4 MB installer, near-zero idle footprint
 
@@ -46,10 +58,10 @@ Pause-ture lives in your system tray and interrupts you with a fullscreen, alway
 
 ### Settings
 
-Per-reminder intervals and on/off toggles, chime on/off, autostart, and the quip
-category picker — all persisted to disk. The settings window also shows today's
-done-vs-snoozed counts and how long your screen was locked, plus quick actions to
-break now, pause, or resume.
+Per-reminder intervals and on/off toggles, chime on/off, autostart, the quip
+category picker and the work-hours window — all persisted to disk. The settings
+window also shows today's done-vs-snoozed counts and how long your screen was
+locked, plus quick actions to break now, pause, or resume.
 
 ## Fact of the break
 
