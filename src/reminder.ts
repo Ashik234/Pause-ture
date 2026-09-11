@@ -67,9 +67,18 @@ const snoozeBtn = document.querySelector<HTMLButtonElement>("#snooze")!;
 // Merged popups gate on the strictest reminder in the batch.
 let remaining = Math.max(...kinds.map((k) => GATE_SECONDS[k] ?? 0));
 
+// Keys are ignored until shortly after the gate opens: a keystroke already
+// in flight (or a held key) must not dismiss the break the instant it arms.
+const KEY_GRACE_MS = 400;
+let keysArmedAt = Number.POSITIVE_INFINITY;
+
 function arm() {
   doneBtn.disabled = false;
   doneBtn.textContent = "Done ✓";
+  doneBtn.title = "Enter or Space";
+  keysArmedAt = performance.now() + KEY_GRACE_MS;
+  // Makes the focus ring visible, so the shortcut is discoverable.
+  doneBtn.focus({ preventScroll: true });
 }
 
 // Countdown finished — the break was taken, so fade out and complete
@@ -97,14 +106,35 @@ if (remaining > 0) {
   arm();
 }
 
-doneBtn.addEventListener("click", () => {
+function done() {
   if (!doneBtn.disabled) invoke("complete_reminder", { kinds });
+}
+
+doneBtn.addEventListener("click", done);
+
+// Keyboard: Enter/Space complete the break once the gate is open, Escape
+// snoozes. Held keys don't count — only a fresh press after the grace period.
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    e.preventDefault();
+    snooze();
+    return;
+  }
+  if (e.key !== "Enter" && e.key !== " ") return;
+  // If the user tabbed to Snooze, let the button handle its own activation.
+  if (document.activeElement === snoozeBtn) return;
+  e.preventDefault();
+  if (e.repeat || performance.now() < keysArmedAt) return;
+  done();
 });
 
 // Escape hatch for calls/meetings — usable even during the countdown.
-snoozeBtn.addEventListener("click", () => {
-  invoke("snooze_reminder", { kinds });
-});
+function snooze() {
+  if (!snoozeBtn.disabled) invoke("snooze_reminder", { kinds });
+}
+
+snoozeBtn.addEventListener("click", snooze);
+snoozeBtn.title = "Esc";
 
 // Gentle two-note chime, synthesized so no audio asset ships.
 function playChime() {

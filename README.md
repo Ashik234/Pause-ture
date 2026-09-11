@@ -30,6 +30,7 @@ Pause-ture lives in your system tray and interrupts you with a fullscreen, alway
 - **Snooze 5 min** — escape hatch for calls and meetings, usable even mid-countdown
 - **Pause 1 hour** — from the tray, for deep-work blocks
 - **Fact of the break** — every popup ends with something worth knowing (see below)
+- **Keyboard** — Enter or Space completes a break once its gate opens, Esc snoozes
 - **Autostart** — launches with Windows (toggleable)
 - ~4 MB installer, near-zero idle footprint
 
