@@ -147,7 +147,7 @@ async function fetchOnThisDay(): Promise<string> {
   const data: { selected: { year: number; text: string }[] } = await res.json();
   const pick = data.selected[Math.floor(Math.random() * data.selected.length)];
   if (!pick) throw new Error("onthisday empty");
-  return `On this day in ${pick.year}: ${pick.text}`;
+  return `On this day in ${pick.year}: ${clip(pick.text, 200)}`;
 }
 
 // Wiktionary's word-of-the-day feed. Entries embed HTML whose stable
@@ -169,8 +169,28 @@ async function fetchWordOfTheDay(): Promise<string> {
     ?.textContent?.trim()
     .replace(/\s+/g, " ");
   if (!word || !def) throw new Error("wordofday parse");
-  const short = def.length > 160 ? `${def.slice(0, 157)}…` : def;
-  return `Word of the day: ${word} — ${short}`;
+  return `Word of the day: ${word} — ${firstSense(def)}`;
+}
+
+// Trim to a whole word so the popup never shows a clipped fragment.
+function clip(text: string, max: number): string {
+  const t = text.trim();
+  if (t.length <= max) return t;
+  const cut = t.lastIndexOf(" ", max);
+  return `${t.slice(0, cut > max / 2 ? cut : max).replace(/[,;:.]$/, "")}…`;
+}
+
+// Wiktionary descriptions stack every sense of the word into one blob, often
+// hundreds of characters. Keep the first sense and end on a whole word so the
+// popup never shows a clipped fragment.
+function firstSense(def: string): string {
+  // Numbered senses ("1. ... 2. ...") or a leading part-of-speech gloss.
+  let text = def.replace(/^\s*\d+[.)]\s*/, "").split(/\s+\d+[.)]\s+/)[0]!;
+  // Semicolons separate sub-senses; a full stop ends the sentence.
+  const stop = text.search(/[.;](\s|$)/);
+  if (stop > 40) text = text.slice(0, stop + 1);
+  text = text.trim().replace(/;$/, ".");
+  return clip(text, 150);
 }
 
 // Live categories are fetched at popup time, so they can't sit in
