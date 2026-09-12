@@ -15,6 +15,8 @@
         --muted: #8b9aab;
         --accent: #4c9aff;
         --accent-dim: rgba(76, 154, 255, 0.14);
+        --accent-soft: rgba(76, 154, 255, 0.28);
+        --accent-strong: rgba(76, 154, 255, 0.4);
         --ok: #57c98a;
         --radius: 14px;
       }
@@ -290,35 +292,58 @@
         outline-offset: 2px;
       }
 
-      /* quick actions */
+      /* quick actions — segmented control, one line per label */
       #actions {
         display: flex;
-        gap: 0.5rem;
+        align-items: stretch;
+        gap: 0.15rem;
         margin: 0 1.4rem 0.75rem;
-      }
-
-      #actions button {
-        flex: 1;
-        padding: 0.55rem 0.6rem;
-        font-size: 0.82rem;
-        font-weight: 600;
-        font-family: inherit;
-        color: var(--text);
+        padding: 0.2rem;
         background: var(--card);
         border: 1px solid var(--line);
         border-radius: 999px;
+      }
+
+      #actions button {
+        flex: 1 1 0;
+        min-width: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.32rem;
+        padding: 0.5rem 0.5rem;
+        font-size: 0.78rem;
+        font-weight: 600;
+        font-family: inherit;
+        line-height: 1.2;
+        /* labels grow ("Paused until 10:30") — clip, never wrap to two lines */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: var(--muted);
+        background: transparent;
+        border: 0;
+        border-radius: 999px;
         cursor: pointer;
-        transition: background 0.15s ease, border-color 0.15s ease,
-          opacity 0.15s ease;
+        transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
       }
 
       #actions button:hover:not(:disabled) {
+        color: var(--text);
         background: var(--card-hover);
-        border-color: var(--accent);
+      }
+
+      #actions button:active:not(:disabled) {
+        background: var(--accent-dim);
+      }
+
+      #actions button:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: -2px;
       }
 
       #actions button:disabled {
-        opacity: 0.4;
+        opacity: 0.35;
         cursor: default;
       }
 
@@ -386,13 +411,25 @@
       }
 
       .chip:hover {
+        color: var(--text);
         border-color: var(--accent);
       }
 
+      /* selected: near-white text so the label reads clearly on the blue fill */
       .chip.on {
-        color: var(--accent);
-        background: var(--accent-dim);
+        color: var(--text);
+        font-weight: 600;
+        background: var(--accent-soft);
         border-color: var(--accent);
+      }
+
+      .chip.on:hover {
+        background: var(--accent-strong);
+      }
+
+      .chip:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
       }
 
       footer {
@@ -461,10 +498,10 @@
       <span id="stats-locked" hidden></span>
     </div>
 
-    <div id="actions">
-      <button id="break-now">☕ Taking a break</button>
-      <button id="pause">⏸ Pause 1 hour</button>
-      <button id="resume" disabled>▶ Resume</button>
+    <div id="actions" role="group" aria-label="Quick actions">
+      <button id="break-now" title="I'm taking a break now — reset all timers">☕ Break now</button>
+      <button id="pause" title="Pause reminders for 1 hour">⏸ Pause 1h</button>
+      <button id="resume" disabled title="Resume reminders">▶ Resume</button>
     </div>
 
     <main id="rows"></main>

@@ -271,13 +271,15 @@ const resumeBtn = document.querySelector<HTMLButtonElement>("#resume")!;
 function setPausedUi(until: string | null) {
   pauseBtn.disabled = until !== null;
   resumeBtn.disabled = until === null;
-  pauseBtn.textContent = until ? `⏸ Paused until ${until}` : "⏸ Pause 1 hour";
+  // short labels — all three segments share a 430px-wide row
+  pauseBtn.textContent = until ? `⏸ Until ${until}` : "⏸ Pause 1h";
+  pauseBtn.title = until ? `Reminders paused until ${until}` : "Pause reminders for 1 hour";
 }
 
 breakBtn.addEventListener("click", async () => {
   await invoke("break_now");
-  breakBtn.textContent = "✓ Timers reset";
-  setTimeout(() => (breakBtn.textContent = "☕ Taking a break"), 1800);
+  breakBtn.textContent = "✓ Reset";
+  setTimeout(() => (breakBtn.textContent = "☕ Break now"), 1800);
 });
 
 pauseBtn.addEventListener("click", async () => {
